@@ -259,9 +259,14 @@ class SlotAttentionParser(nn.Module):
         self.num_slots = num_slots # the number of objects and backgrounds in the scene
         self.object_dim = object_dim # the dimension of object level after the projection
 
-        self.encoder_net = FeatureMapEncoder(input_nc = 4,z_dim = 72)
+        self.encoder_net = FeatureMapEncoder(input_nc = 3,z_dim = 72)
         self.slot_attention = SlotAttention(num_slots,72,72,num_iters)
-        self.decoder_net = FeatureDecoder(72,4,object_dim)
+        self.decoder_net = FeatureDecoder(72,3,object_dim)
+        self.use_obj_score = False
+
+    def allow_obj_score(self):self.use_obj_score = True
+
+    def ban_obj_score(self):self.use_obj_score = False
 
     def freeze_perception(self):
         for param in self.encoder_net.parameters():
@@ -303,8 +308,11 @@ class SlotAttentionParser(nn.Module):
         masks = torch.softmax(logitmasks,1) # masks of shape [b,ns,1,w,h]
         
         # reconstruct the image and calculate the reconstruction loss
-        recons = torch.sum(object_scores.unsqueeze(-1).unsqueeze(-1) * img * masks,1)
-        loss = torch.sum((recons-image) ** 2 / 0.2) # the mse loss of the reconstruction
+        if self.use_obj_score:
+            recons = torch.sum(object_scores.unsqueeze(-1).unsqueeze(-1) * img * masks,1)
+        else:
+            recons = torch.sum( img * masks,1)
+        loss = torch.mean((recons-image) ** 2) # the mse loss of the reconstruction
         return {"full_recons":recons.permute([0,2,3,1]),
                 "masks":masks.permute([0,1,3,4,2]),
                 "recons":img.permute([0,1,3,4,2]),

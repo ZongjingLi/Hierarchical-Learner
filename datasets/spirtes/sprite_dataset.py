@@ -5,7 +5,7 @@ from torch.utils.data import Dataset,DataLoader
 from PIL import Image
 from utils import *
 
-class SpriteQA(Dataset):
+class SpriteWithQuestions(Dataset):
     def __init__(self,split = "train",data_path = None):
         super().__init__()
         
@@ -21,8 +21,8 @@ class SpriteQA(Dataset):
     def __getitem__(self,index):
 
         image = Image.open(os.path.join(self.root_dir,self.split,"{}_{}.png".format(self.split,index)))
-        image = image.convert("RGB").resize([64,64]) 
-        image = self.img_transform(image).permute([1,2,0]) * 255
+        image = image.convert("RGB").resize([128,128]) 
+        image = self.img_transform(image).permute([1,2,0])
 
         question = [q["question"] for q in self.questions[index]]
         programs  = [p["program"] for p in self.questions[index]]
@@ -48,7 +48,7 @@ class SpriteData(Dataset):
     def __getitem__(self,index):
         path = self.files[index]
         image = Image.open(os.path.join(self.root_dir,self.split,"{}_{}.png".format(self.split,index)))
-        image = image.convert("RGB").resize([64,64]) 
-        image = self.img_transform(image).permute([1,2,0]) * 255
+        image = image.convert("RGB").resize([128,128]) 
+        image = self.img_transform(image).permute([1,2,0])
         sample = {"image":image}
         return sample
