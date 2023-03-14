@@ -22,6 +22,6 @@ class Clevr4(Dataset):
         index = "000000" + str(index)
         image = Image.open(self.path.format(index[-6:]))
         image = image.convert("RGB").resize([config.imsize,config.imsize])
-        image = self.img_transform(image) * 255
+        image = self.img_transform(image) 
         sample = {"image":image.permute([1,2,0])}
         return sample

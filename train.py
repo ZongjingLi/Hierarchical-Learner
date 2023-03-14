@@ -10,6 +10,7 @@ import os
 import sys
 import time
 import datetime
+from bleach import Cleaner
 
 import torch
 import torch.nn as nn
@@ -17,7 +18,7 @@ import torchvision
 
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from datasets.spirtes.sprite_dataset import SpriteWithQuestions
+from datasets.sprites.sprite_dataset import SpriteWithQuestions
 from models.hal.model import HierarchicalLearner
 from models.percept.slot_attention import SlotAttentionParser, SlotAttentionParser64
 from datasets import *
@@ -99,7 +100,7 @@ def train(model,dataset,config):
                     masks_grid = torchvision.utils.make_grid(masks.cpu().detach().permute([0,1,4,2,3]).flatten(start_dim = 0, end_dim = 1),normalize=True,nrow=num_slots)
                     writer.add_image("Masks",masks_grid.cpu().detach().numpy(),itrs)
 
-                    comps_grid = torchvision.utils.make_grid(recons*masks.cpu().detach().permute([0,1,4,2,3]).flatten(start_dim = 0, end_dim = 1),normalize=True,nrow=num_slots)
+                    comps_grid = torchvision.utils.make_grid((recons*masks).cpu().detach().permute([0,1,4,2,3]).flatten(start_dim = 0, end_dim = 1),normalize=True,nrow=num_slots)
                     writer.add_image("Components",comps_grid.cpu().detach().numpy(),itrs)
 
                     grid = torchvision.utils.make_grid(full_recon.cpu().detach().permute([0,3,1,2]),normalize=True,nrow=config.batch_size)
@@ -117,8 +118,10 @@ def train(model,dataset,config):
 from config import *
 train_dataset = PartNet("train")
 train_dataset = SpriteWithQuestions("train",resolution = (config.imsize,config.imsize))
+train_dataset = Clevr4(config)
 model = HierarchicalLearner(config)
-model = SlotAttentionParser64(5,100,5)
-model = torch.load("checkpoints/test.ckpt")
+#model = SlotAttentionParser64(5,100,5)
+model = SlotAttentionParser(5,100,5)
+#model = torch.load("checkpoints/test.ckpt")
 
 train(model,train_dataset,config)
