@@ -246,6 +246,15 @@ class FeatureDecoder(nn.Module):
           
 class SlotAttentionParser(nn.Module):
     def __init__(self,num_slots,object_dim,num_iters):
+        """
+        output value:
+        "full_recons":          [B,W,H,C],
+        "masks":                [B,N,W,H,1],
+        "recons":               [B,N,W,H,C],
+        "object_features":      [B,N,O],
+        "object_scores":        [B,N,1]
+        "loss":loss,   
+        """
         super().__init__()
         self.num_slots = num_slots # the number of objects and backgrounds in the scene
         self.object_dim = object_dim # the dimension of object level after the projection
@@ -265,6 +274,14 @@ class SlotAttentionParser(nn.Module):
         self.decoder_net.unfreeze_perception()
 
     def forward(self,image):
+        """
+        "full_recons":recons.permute([0,2,3,1]),
+        "masks":masks.permute([0,1,3,4,2]),
+        "recons":img.permute([0,1,3,4,2]),
+        "loss":loss,
+        "object_features":object_features,
+        "object_scores":object_scores
+        """
         # preprocessing of image: channel first operation
         image = image.permute([0,3,1,2])
         b,c,w,h = image.shape
