@@ -26,11 +26,14 @@ parser.add_argument("--batch_size",         default = 2)
 parser.add_argument("--optimizer",          default = "Adam")
 parser.add_argument("--lr",                 default = 2e-4)
 parser.add_argument("--warmup",             default = True)
-parser.add_argument("--warmup_step",        default = 100)
+parser.add_argument("--warmup_steps",        default = 100)
 parser.add_argument("--decay",              default = True)
+parser.add_argument("--decay_steps",        default = 2000)
+parser.add_argument("--decay_rate",        default = 0.99)
 parser.add_argument("--shuffle",            default = True)
 
 # save checkpoints setup
 parser.add_argument("--ckpt_itr",           default = 100)
+parser.add_argument("--ckpt_path",          default = False)
 
 config = parser.parse_args(args = [])
