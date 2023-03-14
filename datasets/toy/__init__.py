@@ -1,1 +1,1 @@
-from toy_dataset import *
+from .toy_dataset import *

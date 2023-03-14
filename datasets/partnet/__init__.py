@@ -1,1 +1,1 @@
-from partnet_dataset import *
+from .partnet_dataset import *

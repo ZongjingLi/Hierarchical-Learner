@@ -15,6 +15,8 @@ import torch
 import torch.nn as nn
 
 from torch.utils.data import Dataset, DataLoader
+from datasets import *
+from models.hal.model import HierarchicalLearner
 
 def train(model,dataset,config):
     if config.optimizer == "Adam":
@@ -40,3 +42,8 @@ def train(model,dataset,config):
 
             sys.stdout.write ("Epoch: {}, Itrs: {} Loss: {}, Time: {}".format(epoch, itrs, working_loss,
             datetime.timedelta(seconds=time.time() - start)))
+
+from config import *
+partnet_dataset = PartNet("train")
+model = HierarchicalLearner(config)
+train(model,partnet,config)
