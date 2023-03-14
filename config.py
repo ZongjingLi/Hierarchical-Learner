@@ -20,14 +20,17 @@ parser.add_argument("--perception",         default = "slot_attention")
 parser.add_argument("--concept_type",       default = "box")
 
 # training setup 
+parser.add_argument("--training_mode",      default = "perception")
 parser.add_argument("--epochs",             default = 100)
 parser.add_argument("--batch_size",         default = 2)
 parser.add_argument("--optimizer",          default = "Adam")
 parser.add_argument("--lr",                 default = 2e-4)
 parser.add_argument("--warmup",             default = True)
-parser.add_argument("--warmup_step",         default = 100)
+parser.add_argument("--warmup_step",        default = 100)
 parser.add_argument("--decay",              default = True)
+parser.add_argument("--shuffle",            default = True)
 
 # save checkpoints setup
 parser.add_argument("--ckpt_itr",           default = 100)
+
 config = parser.parse_args(args = [])

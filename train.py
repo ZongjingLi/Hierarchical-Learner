@@ -21,7 +21,7 @@ from models.hal.model import HierarchicalLearner
 def train(model,dataset,config):
     if config.optimizer == "Adam":
         optimizer = torch.optim.Adam(model.parameters(), lr = config.lr)
-    dataloader = DataLoader(dataset, batch_size = config.batch_size)
+    dataloader = DataLoader(dataset, batch_size = config.batch_size, shuffle = config.shuffle)
 
     itrs = 0
     start = time.time() # record the start time of the training
@@ -29,21 +29,25 @@ def train(model,dataset,config):
         for sample in dataloader:
             itrs += 1
 
-            # engage in warmup training 
+            # check to engage in warmup training 
             if itrs < config.warmup_step:
                 learning_rate = config.lr * ((1 + itrs)/config.warmup_step)
             else:
                 learning_rate = config.lr
+
+            # check t engage in decay training
 
             sample
             working_loss = 0 # calculate the working loss of the batch
 
             optimizer.param_groups[0]["lr"] = learning_rate
 
-            sys.stdout.write ("Epoch: {}, Itrs: {} Loss: {}, Time: {}".format(epoch, itrs, working_loss,
+            sys.stdout.write ("\rEpoch: {}, Itrs: {} Loss: {}, Time: {}".format(epoch + 1, itrs, working_loss,
             datetime.timedelta(seconds=time.time() - start)))
 
+
 from config import *
-partnet_dataset = PartNet("train")
+train_dataset = PartNet("train")
 model = HierarchicalLearner(config)
-train(model,partnet,config)
+
+train(model,train_dataset,config)

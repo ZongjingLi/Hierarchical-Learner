@@ -20,6 +20,6 @@ class PartNet(Dataset):
         self.root_dir = ""
 
     def __getitem__(self,index):
-        return index
+        return torch.zeros([128,128,4])
 
     def __len__(self):return 6
