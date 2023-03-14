@@ -322,8 +322,8 @@ class SlotAttentionParser(nn.Module):
 
 class FeatureDecoder64(nn.Module):
     def __init__(self, inchannel,input_channel,object_dim = 100):
-        super(FeatureDecoder, self).__init__()
-        self.im_size = 128
+        super(FeatureDecoder64, self).__init__()
+        self.im_size = 64
         self.conv1 = nn.Conv2d(inchannel + 2, 32, 3, bias=False)
         # self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = nn.Conv2d(32, 32, 3, bias=False)
@@ -360,7 +360,7 @@ class FeatureDecoder64(nn.Module):
 
         # Tile across to match image size
         # Shape: NxDx64x64
-        z = z.expand(-1, -1, self.im_size + 4, self.im_size + 4)
+        z = z.expand(-1, -1, self.im_size + 8, self.im_size + 8)
 
         # Expand grids to batches and concatenate on the channel dimension
         # Shape: Nx(D+2)x64x64
@@ -379,6 +379,7 @@ class FeatureDecoder64(nn.Module):
         img = self.conv5_img(x)
         img = .5 + 0.5 * torch.tanh(img + self.bias)
         logitmask = self.conv5_mask(x)
+
 
         conv_features = x.flatten(start_dim=1)
         

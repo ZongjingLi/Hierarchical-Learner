@@ -19,9 +19,8 @@ from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from datasets.spirtes.sprite_dataset import SpriteWithQuestions
 from models.hal.model import HierarchicalLearner
+from models.percept.slot_attention import SlotAttentionParser, SlotAttentionParser64
 from datasets import *
-from models.percept.slot_attention import SlotAttentionParser
-
 
 def train(model,dataset,config):
     logging_root = "./logs"
@@ -48,15 +47,12 @@ def train(model,dataset,config):
         for sample in dataloader:
 
             # check to engage in warmup training 
-            if itrs < config.warmup_steps:
+            if config.warmup and itrs < config.warmup_steps:
                 learning_rate = config.lr * ((1 + itrs)/config.warmup_steps)
             else:
                 learning_rate = config.lr
             # check to engage in decay training
-            if itrs > config.decay_steps:
-                learning_rate = config.lr * (config.decay_rate ** (itrs / config.decay_steps))
-            else:
-                learning_rate = config.lr
+
             optimizer.param_groups[0]["lr"] = learning_rate # setup the lr params
 
             working_loss = 0
@@ -109,8 +105,8 @@ def train(model,dataset,config):
 
 from config import *
 train_dataset = PartNet("train")
-train_dataset = SpriteWithQuestions("train")
+train_dataset = SpriteWithQuestions("train",resolution = (config.imsize,config.imsize))
 model = HierarchicalLearner(config)
-model = SlotAttentionParser(5,100,3)
+model = SlotAttentionParser64(5,100,6)
 
 train(model,train_dataset,config)

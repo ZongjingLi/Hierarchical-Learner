@@ -6,11 +6,12 @@ from PIL import Image
 from utils import *
 
 class SpriteWithQuestions(Dataset):
-    def __init__(self,split = "train",data_path = None):
+    def __init__(self,split = "train",resolution = (64,64)):
         super().__init__()
         
         assert split in ["train","val","test"]
         self.split = split
+        self.resolution = resolution
         self.root_dir = "/Users/melkor/Documents/datasets/sprites"
         self.questions = load_json(os.path.join(self.root_dir,"sprite_qa.json"))
         self.img_transform = transforms.Compose(
@@ -21,8 +22,8 @@ class SpriteWithQuestions(Dataset):
     def __getitem__(self,index):
 
         image = Image.open(os.path.join(self.root_dir,self.split,"{}_{}.png".format(self.split,index)))
-        image = image.convert("RGB").resize([128,128]) 
-        image = self.img_transform(image).permute([1,2,0])
+        image = image.convert("RGB").resize(self.resolution) 
+        image = self.img_transform(image).permute([1,2,0]) 
 
         question = [q["question"] for q in self.questions[index]]
         programs  = [p["program"] for p in self.questions[index]]
@@ -33,11 +34,12 @@ class SpriteWithQuestions(Dataset):
 
 
 class SpriteData(Dataset):
-    def __init__(self,split = "train",data_path = None):
+    def __init__(self,split = "train",resolution = (128,128)):
         super().__init__()
         
         assert split in ["train","val","test"]
         self.split = split
+        self.resolution = resolution
         self.root_dir = "/Users/melkor/Documents/datasets/sprites"
         self.files = os.listdir(os.path.join(self.root_dir,split))
         self.img_transform = transforms.Compose(
@@ -48,7 +50,7 @@ class SpriteData(Dataset):
     def __getitem__(self,index):
         path = self.files[index]
         image = Image.open(os.path.join(self.root_dir,self.split,"{}_{}.png".format(self.split,index)))
-        image = image.convert("RGB").resize([128,128]) 
+        image = image.convert("RGB").resize(self.resolution) 
         image = self.img_transform(image).permute([1,2,0])
         sample = {"image":image}
         return sample
