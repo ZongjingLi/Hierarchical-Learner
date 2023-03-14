@@ -453,6 +453,7 @@ class SlotAttentionParser64(nn.Module):
         """
         # preprocessing of image: channel first operation
         image = image.permute([0,3,1,2])
+
         b,c,w,h = image.shape
         # encoder model: extract visual feature map from the image
         feature_map = self.encoder_net(image)

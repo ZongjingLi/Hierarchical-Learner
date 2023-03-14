@@ -34,6 +34,8 @@ def train(model,dataset,config):
 
     if config.optimizer == "Adam":
         optimizer = torch.optim.Adam(model.parameters(), lr = config.lr)
+    if config.optimizer == "RMSprop":
+        optimizer = torch.optim.RMSprop(model.parameters(), lr = config.lr)
     dataloader = DataLoader(dataset, batch_size = config.batch_size, shuffle = config.shuffle)
     
     checkpoint_path = config.ckpt_path
@@ -44,6 +46,7 @@ def train(model,dataset,config):
     itrs = 0
     start = time.time() # record the start time of the training
     for epoch in range(config.epochs):
+        total_loss = 0
         for sample in dataloader:
 
             # check to engage in warmup training 
@@ -78,21 +81,16 @@ def train(model,dataset,config):
             optimizer.zero_grad()
             working_loss.backward()
             optimizer.step()
+            total_loss += working_loss.detach()
 
             sys.stdout.write ("\rEpoch: {}, Itrs: {} Loss: {}, Time: {}".format(epoch + 1, itrs, working_loss,datetime.timedelta(seconds=time.time() - start)))
 
             if itrs % config.ckpt_itr == 0:
                 writer.add_scalar("working_loss", working_loss, itrs)
-                torch.save(model,"checkpoints/test.ckpt")
+                torch.save(model,"checkpoints/slot64.ckpt")
 
                 if config.training_mode == "perception":
                     # load the images, reconstructions, and other thing
-                    grid = torchvision.utils.make_grid(full_recon.cpu().detach().permute([0,3,1,2]),normalize=True,nrow=config.batch_size)
-                    writer.add_image("Full Recons",grid.cpu().detach().numpy(),itrs)
-
-                    gt_grid = torchvision.utils.make_grid(sample["image"].cpu().detach().permute([0,3,1,2]),normalize=True,nrow=config.batch_size)
-                    writer.add_image("GT Image",gt_grid.cpu().detach().numpy(),itrs)
-
                     num_slots = recons.shape[1]
 
                     recon_grid = torchvision.utils.make_grid(recons.cpu().detach().permute([0,1,4,2,3]).flatten(start_dim = 0, end_dim = 1),normalize=True,nrow=num_slots)
@@ -101,12 +99,26 @@ def train(model,dataset,config):
                     masks_grid = torchvision.utils.make_grid(masks.cpu().detach().permute([0,1,4,2,3]).flatten(start_dim = 0, end_dim = 1),normalize=True,nrow=num_slots)
                     writer.add_image("Masks",masks_grid.cpu().detach().numpy(),itrs)
 
+                    comps_grid = torchvision.utils.make_grid(recons*masks.cpu().detach().permute([0,1,4,2,3]).flatten(start_dim = 0, end_dim = 1),normalize=True,nrow=num_slots)
+                    writer.add_image("Components",comps_grid.cpu().detach().numpy(),itrs)
+
+                    grid = torchvision.utils.make_grid(full_recon.cpu().detach().permute([0,3,1,2]),normalize=True,nrow=config.batch_size)
+                    writer.add_image("Full Recons",grid.cpu().detach().numpy(),itrs)
+
+                    gt_grid = torchvision.utils.make_grid(sample["image"].cpu().detach().permute([0,3,1,2]),normalize=True,nrow=config.batch_size)
+                    writer.add_image("GT Image",gt_grid.cpu().detach().numpy(),itrs)
+
+                
+
             itrs += 1
+        total_loss = total_loss/len(dataloader)
+        writer.add_scalar("epoch_loss",total_loss,epoch)
 
 from config import *
 train_dataset = PartNet("train")
 train_dataset = SpriteWithQuestions("train",resolution = (config.imsize,config.imsize))
 model = HierarchicalLearner(config)
-model = SlotAttentionParser64(5,100,6)
+model = SlotAttentionParser64(5,100,5)
+model = torch.load("checkpoints/test.ckpt")
 
 train(model,train_dataset,config)
