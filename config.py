@@ -25,6 +25,7 @@ parser.add_argument("--batch_size",         default = 2)
 parser.add_argument("--optimizer",          default = "Adam")
 parser.add_argument("--lr",                 default = 2e-4)
 parser.add_argument("--warmup",             default = True)
+parser.add_argument("--warmup_step",         default = 100)
 parser.add_argument("--decay",              default = True)
 
 # save checkpoints setup
