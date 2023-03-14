@@ -250,9 +250,9 @@ class SlotAttentionParser(nn.Module):
         self.num_slots = num_slots # the number of objects and backgrounds in the scene
         self.object_dim = object_dim # the dimension of object level after the projection
 
-        self.encoder_net = FeatureMapEncoder(input_nc = 3,z_dim = 72)
+        self.encoder_net = FeatureMapEncoder(input_nc = 4,z_dim = 72)
         self.slot_attention = SlotAttention(num_slots,72,72,num_iters)
-        self.decoder_net = FeatureDecoder(72,3,object_dim)
+        self.decoder_net = FeatureDecoder(72,4,object_dim)
 
     def freeze_perception(self):
         for param in self.encoder_net.parameters():
