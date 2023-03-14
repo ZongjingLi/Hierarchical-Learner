@@ -122,6 +122,6 @@ train_dataset = Clevr4(config)
 model = HierarchicalLearner(config)
 #model = SlotAttentionParser64(5,100,5)
 model = SlotAttentionParser(5,100,5)
-#model = torch.load("checkpoints/test.ckpt")
+model = torch.load("checkpoints/slot64.ckpt")
 
 train(model,train_dataset,config)

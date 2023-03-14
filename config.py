@@ -37,7 +37,7 @@ parser.add_argument("--decay_rate",        default = 0.99)
 parser.add_argument("--shuffle",            default = True)
 
 # save checkpoints setup
-parser.add_argument("--ckpt_itr",           default = 5)
+parser.add_argument("--ckpt_itr",           default = 100)
 parser.add_argument("--ckpt_path",          default = False)
 
 config = parser.parse_args(args = [])
