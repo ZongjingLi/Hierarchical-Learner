@@ -16,7 +16,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--device",             default = device)
 
 # hiearchical model setup
+parser.add_argument("--imsize",             default = 128)
 parser.add_argument("--perception",         default = "slot_attention")
+parser.add_argument("--num_slots",          default = 5)
+parser.add_argument("--object_dim",         default = 100)
+parser.add_argument("--slot_itrs",          default = 3)
 parser.add_argument("--concept_type",       default = "box")
 
 # training setup 
