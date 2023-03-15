@@ -56,6 +56,8 @@ def train(model,dataset,config):
             else:
                 learning_rate = config.lr
             # check to engage in decay training
+            if config.decay and itrs > config.decay_steps:
+                learning_rate = config.lr * (config.decay_rate ** (itrs/config.decay_steps))
 
             optimizer.param_groups[0]["lr"] = learning_rate # setup the lr params
 

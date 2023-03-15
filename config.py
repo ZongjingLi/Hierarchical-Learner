@@ -35,7 +35,7 @@ parser.add_argument("--lr",                 default = 2e-4)
 parser.add_argument("--warmup",             default = True)
 parser.add_argument("--warmup_steps",       default = 1000)
 parser.add_argument("--decay",              default = False)
-parser.add_argument("--decay_steps",        default = 2000)
+parser.add_argument("--decay_steps",        default = 20000)
 parser.add_argument("--decay_rate",         default = 0.99)
 parser.add_argument("--shuffle",            default = True)
 
