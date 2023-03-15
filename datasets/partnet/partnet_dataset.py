@@ -26,7 +26,7 @@ class PartNet(Dataset):
 
 if __name__ == "__main__":
     import h5py
-    filename = "/Users/melkor/Documents/datasets/sem_seg_h5/Door-2/train-00.h5"
+    filename = "/Users/melkor/Documents/datasets/sem_seg_h5/Table-2/train-00.h5"
 
     with h5py.File(filename, "r") as f:
         # Print all root level object names (aka keys) 
