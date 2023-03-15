@@ -383,7 +383,7 @@ class FeatureDecoder64(nn.Module):
 
         conv_features = x.flatten(start_dim=1)
         
-        object_scores = torch.sigmoid( 0.001 *  self.object_score_marker(conv_features)) 
+        object_scores = torch.sigmoid( self.object_score_marker(conv_features)) 
 
         return img, logitmask, object_features,object_scores
 
