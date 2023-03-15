@@ -8,7 +8,7 @@ from models.nn import build_entailment
 from utils import freeze
 
 
-class FewshotProgramExecutor(nn.Module):
+class HalProgramExecutor(nn.Module):
     NETWORK_REGISTRY = {}
 
     def __init__(self, cfg):
@@ -26,7 +26,7 @@ class MetaLearner(nn.Module):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         name = MetaLearner.get_name(cls.__name__)
-        FewshotProgramExecutor.NETWORK_REGISTRY[name] = cls
+        HalProgramExecutor.NETWORK_REGISTRY[name] = cls
         cls.name = name
 
     @staticmethod
