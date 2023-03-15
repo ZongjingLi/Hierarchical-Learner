@@ -109,7 +109,7 @@ def train(model,dataset,config):
                     gt_grid = torchvision.utils.make_grid(sample["image"].cpu().detach().permute([0,3,1,2]),normalize=True,nrow=config.batch_size)
                     writer.add_image("GT Image",gt_grid.cpu().detach().numpy(),itrs)
 
-                
+                    writer.add_image("Backup",gt_grid.cpu().detach().numpy(),itrs)             
 
             itrs += 1
         total_loss = total_loss/len(dataloader)
