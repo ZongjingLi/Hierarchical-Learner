@@ -19,7 +19,7 @@ if __name__ == "__main__":
     hal_model = HierarchicalLearner(config)
 
     print("start the main function")
-    p = eval("Exist(Union(Scene(), Scene()))")
+    p = hal_model.parse("exist(union(scene(), scene()))")
     print(p)
 
     #q = p.evaluate(hal_model)

@@ -21,13 +21,13 @@ class HierarchicalLearner(nn.Module):
 
         self.executor = HalProgramExecutor(config)
 
-    @staticmethod
-    def parse(self, string, translator = None):
+    def parse(self,string, translator = None):
         if translator == None: translator = self.config.translator
         def chain(p):
-            head = p[]
-            
-            pass
+            head = p
+            args = []
+            if head in translator: q = translator[head](*args)
+            return q
         program = chain(string)
         return program
     

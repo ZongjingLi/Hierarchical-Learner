@@ -9,8 +9,11 @@
 
 import torch
 import argparse
+from models import *
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+translator = {"scene":Scene,"exist":Exist,"filter":Filter,"union":Union}
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--device",             default = device)
@@ -33,6 +36,7 @@ parser.add_argument("--method",             default = "uniform")
 parser.add_argument("--offset",             default = [-.15, .15])
 parser.add_argument("--center",             default =[.1, .2])
 parser.add_argument("--entires",            default = 10)
+parser.add_argument("--translator",         default = translator)
 
 # training setup 
 parser.add_argument("--training_mode",      default = "perception")
