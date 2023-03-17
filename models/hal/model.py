@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from models.nn import *
 from models.percept import *
+from .executor import *
 
 class UnknownArgument(Exception):
     def __init__():super()
@@ -17,7 +18,15 @@ class HierarchicalLearner(nn.Module):
             raise UnknownArgument
         self.proj = FCBlock(3, 128, 3, 3)
 
+        self.executor = HalProgramExecutor(config)
+
 
     def forward(self,inputs):
+        part_centric_output = self.scene_perception(inputs["images"])
+
+        scene_parsed = part_centric_output
+
+        programs = inputs["programs"]
+
         outputs = {}
         return outputs

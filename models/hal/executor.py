@@ -11,11 +11,11 @@ from utils import freeze
 class HalProgramExecutor(nn.Module):
     NETWORK_REGISTRY = {}
 
-    def __init__(self, cfg):
+    def __init__(self, config):
         super().__init__()
-        network = self.NETWORK_REGISTRY[cfg.NAME](cfg)
-        entailment = build_entailment(cfg)
-        self.learner = PipelineLearner(network, entailment)
+        #etwork = self.NETWORK_REGISTRY[config.name](config)
+        entailment = build_entailment(config)
+        self.learner = PipelineLearner(0, entailment)
 
     def forward(self, q):
         return q(self.learner)

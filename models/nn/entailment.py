@@ -41,4 +41,4 @@ class ConeEntailment(nn.Module, metaclass = Singleton):
 
 REP2ENTAILMENT = {"box":Entailment, "plane":PlaneEntailment, "cone": ConeEntailment}
 
-def build_entailment(config): return REP2ENTAILMENT(config.concept_type)
+def build_entailment(config): return REP2ENTAILMENT[config.concept_type]

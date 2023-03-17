@@ -9,7 +9,15 @@
 
 if __name__ == "__main__":
     from models import *
-    slot = SlotAttentionParser(8, 100, 3)
-    inputs = torch.randn([10,128,128,3])
-    outputs = slot(inputs)
+    from config import *
+
+    input_ims = torch.randn([10,128,128,3])
+    input_programs = ["Exist(Filter(Scene(), red))", "Count(Filter(Scene(), ship))"]
+
+    inputs = {"images": input_ims, "programs": input_programs}
+
+    hal_model = HierarchicalLearner(config)
+
     print("start the main function")
+    
+    hal_model(inputs)
