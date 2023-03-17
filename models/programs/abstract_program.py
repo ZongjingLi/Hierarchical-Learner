@@ -53,7 +53,7 @@ class AbstractProgram:
     def __call__(self,executor):
         raise NotImplementedError
     
-    def __str__(self):return "(" + ', '.join([self.name, *(str(arg) for arg in self.arguments)]) + ")"
+    def __str__(self):return self.name + "(" + ', '.join([*(str(arg) for arg in self.arguments)]) + ")"
 
     @staticmethod
     def sequence2text(tensor, concepts):

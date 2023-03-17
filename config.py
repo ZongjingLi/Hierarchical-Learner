@@ -28,6 +28,12 @@ parser.add_argument("--concept_type",       default = "box")
 parser.add_argument("--concept_dim",        default = 100)
 parser.add_argument("--temperature",        default = 0.2)
 
+# box concept setup
+parser.add_argument("--method",             default = "uniform")
+parser.add_argument("--offset",             default = [-.15, .15])
+parser.add_argument("--center",             default =[.1, .2])
+parser.add_argument("--entires",            default = 10)
+
 # training setup 
 parser.add_argument("--training_mode",      default = "perception")
 parser.add_argument("--epochs",             default = 1000)

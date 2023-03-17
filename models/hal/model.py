@@ -11,6 +11,7 @@ class UnknownArgument(Exception):
 class HierarchicalLearner(nn.Module):
     def __init__(self,config):
         super().__init__()
+        self.config = config
         if config.perception == "slot_attention":
             if config.imsize == 128:self.scene_perception = SlotAttentionParser(config.num_slots,config.object_dim,config.slot_itrs)
             else:self.scene_perception = SlotAttentionParser64(config.num_slots,config.object_dim,config.slot_itrs)
@@ -20,7 +21,16 @@ class HierarchicalLearner(nn.Module):
 
         self.executor = HalProgramExecutor(config)
 
-
+    @staticmethod
+    def parse(self, string, translator = None):
+        if translator == None: translator = self.config.translator
+        def chain(p):
+            head = p[]
+            
+            pass
+        program = chain(string)
+        return program
+    
     def forward(self,inputs):
         part_centric_output = self.scene_perception(inputs["images"])
 
