@@ -26,21 +26,14 @@ if __name__ == "__main__":
     p = hal_model.parse("exist(scene())")
     p = hal_model.parse("unique(scene())")
     p = hal_model.parse("exist(filter(scene(),red))")
-    p = hal_model.executor.parse("filter(scene(),house)")
+    p = hal_model.executor.parse("exist(filter(scene(),boat))")
     print(p)
 
-    kwargs = {"features":torch.randn([3,200])}
+    kwargs = {"features":torch.randn([8,200])}
 
     o = hal_model.executor(p,**kwargs)
-
-    box_embeddings = hal_model.box_registry(torch.tensor([3,4]))
-    c1 = box_embeddings[0:1,...]
-    c2 = box_embeddings[1:2,...]
-    bentailment = build_entailment(config)
-
-    score = bentailment(c1,c2)
 
     print(o["end"])
 
     hal_model(inputs)
-
+    

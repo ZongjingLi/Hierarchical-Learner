@@ -26,7 +26,11 @@ class HalProgramExecutor(nn.Module):
         self.concept_registry = build_box_registry(config)
 
         # [Word Vocab]
-        self.concept_vocab = config.concept_vocab
+        concept_vocab = []
+        with open("knowledge/{}_concept_vocab.txt".format(config.domain)) as vocab:
+            for concept_name in vocab:concept_vocab.append(concept_name.strip())
+
+        self.concept_vocab = concept_vocab
         
         # args during the execution
         self.kwargs = None 
