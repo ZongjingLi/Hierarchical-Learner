@@ -23,9 +23,10 @@ if __name__ == "__main__":
 
     print("start the main function")
     #p = hal_model.executor.parse("exist(filter(scene(),red))")
-    p = hal_model.executor.parse("exist(scene())")
-    p = hal_model.executor.parse("unique(scene())")
-    p = hal_model.executor.parse("exist(filter(scene(),red))")
+    p = hal_model.parse("exist(scene())")
+    p = hal_model.parse("unique(scene())")
+    p = hal_model.parse("exist(filter(scene(),red))")
+    p = hal_model.executor.parse("filter(scene(),house)")
     print(p)
 
     kwargs = {"features":torch.randn([3,200])}

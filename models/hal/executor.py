@@ -51,6 +51,7 @@ class HalProgramExecutor(nn.Module):
         return q(self)
 
     def parse(self,string, translator = None):
+        string = string.replace(" ","")
         if translator == None: translator = self.translator
         def chain(p):
             head, paras = head_and_paras(p)

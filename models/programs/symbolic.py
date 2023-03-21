@@ -125,8 +125,9 @@ class Filter(SymbolicProgram):
 
     def __call__(self, executor):
         child = self.child(executor)
-        mask  = executor.entailment(executor.kwargs["features"].unsqueeze(-2),
+        mask  = executor.entailment(executor.kwargs["features"],
             executor.get_concept_embedding(self.concept))
+
         filter_logit = torch.min(child["end"], mask)
         query_object = mask[..., 0].max(-1).indices
         return {**child, "end": filter_logit, 
