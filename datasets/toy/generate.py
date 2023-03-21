@@ -9,3 +9,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+
+import os
+
+def generate_toy_dataset(num, resolution = (64,64)):
+    0
+
+if __name__ == "__main__":
+    generate_toy_dataset(10)
