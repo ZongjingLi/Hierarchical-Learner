@@ -26,8 +26,6 @@ class HalProgramExecutor(nn.Module):
         self.concept_registry = build_box_registry(config)
 
         # [Word Vocab]
-
-        sents = ["concept red have same category as concept blue","same category concepts are considered synonyms"]
         self.concept_vocab = ["red", "blue", "house"]
         
         # args during the execution
