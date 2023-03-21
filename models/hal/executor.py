@@ -12,6 +12,9 @@ from utils import *
 class UnknownArgument(Exception):
     def __init__():super()
 
+class UnknownConceptError(Exception):
+    def __init__():super()
+
 class HalProgramExecutor(nn.Module):
     NETWORK_REGISTRY = {}
 
@@ -19,23 +22,33 @@ class HalProgramExecutor(nn.Module):
         super().__init__()
         self.config = config
 
-        entailment = build_entailment(config)
-        concept_registry = build_box_registry(config)
+        self.entailment = build_entailment(config)
+        self.concept_registry = build_box_registry(config)
 
         # [Word Vocab]
 
         sents = ["concept red have same category as concept blue","same category concepts are considered synonyms"]
+        self.concept_vocab = ["red", "blue", "house"]
+        
+        # args during the execution
+        self.kwargs = None 
 
-        self.concept_vocab = WordVocab()
-        self.concept_vocab.update(sents)
-        self.concept_vocab.freeze()
+        # Hierarchy Representation
+        self.hierarchy = 0
 
-
-        self.learner = PipelineLearner(0, entailment)
         self.translator = config.translator
 
-    def forward(self, q):
-        return q(self.learner)
+    def get_concept_embedding(self,concept):
+        try:
+            concept_index = self.concept_vocab.index(concept)
+            return self.concept_registry(torch.tensor(concept_index).unsqueeze(0))
+        except:
+            raise UnknownConceptError
+
+    def forward(self, q, **kwargs):
+        self.kwargs = kwargs
+
+        return q(self)
 
     def parse(self,string, translator = None):
         if translator == None: translator = self.translator

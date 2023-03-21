@@ -98,7 +98,9 @@ class Scene(SymbolicProgram):
         super().__init__(*args)
 
     def __call__(self,executor):
-        logit = torch.ones((1,1), device = self.object_collections.device) * self.BIG_NUMBER
+        features = executor.kwargs["features"]
+        logit = torch.ones(features.shape[0] ,device = features.device) * self.BIG_NUMBER
+
         return {"end":logit}
 
 class Unique(SymbolicProgram):
@@ -119,16 +121,16 @@ class Unique(SymbolicProgram):
 class Filter(SymbolicProgram):
     def __init__(self, *args):
         super().__init__(*args)
-        self.child, self.concept_collections = args
+        self.child, self.concept = args
 
     def __call__(self, executor):
         child = self.child(executor)
-        mask  = executor.entailment(self.object_collections.unsqueeze(-3),
-            self.concept_collections.unsqueeze(-2))
+        mask  = executor.entailment(executor.kwargs["features"].unsqueeze(-2),
+            executor.get_concept_embedding(self.concept))
         filter_logit = torch.min(child["end"], mask)
         query_object = mask[..., 0].max(-1).indices
-        return {**child, "end": filter_logit, "queried_embedding": self.concept_collections,
-            "feature": self.object_collections, "query_object": query_object}
+        return {**child, "end": filter_logit, 
+            "feature": executor.kwargs["features"], "query_object": query_object}
 
 
 class Relate(SymbolicProgram):

@@ -24,12 +24,13 @@ if __name__ == "__main__":
     print("start the main function")
     #p = hal_model.executor.parse("exist(filter(scene(),red))")
     p = hal_model.executor.parse("exist(scene())")
+    p = hal_model.executor.parse("unique(scene())")
+    p = hal_model.executor.parse("exist(filter(scene(),red))")
     print(p)
 
-    kwargs = {"features":torch.randn([3,100])}
-    q = p.evaluate(hal_model.box_registry, **kwargs)
-    #q = p.evaluate(hal_model)
-    o = hal_model.executor(q)
+    kwargs = {"features":torch.randn([3,200])}
+
+    o = hal_model.executor(p,**kwargs)
 
     box_embeddings = hal_model.box_registry(torch.tensor([3,4]))
     c1 = box_embeddings[0:1,...]
@@ -37,10 +38,8 @@ if __name__ == "__main__":
     bentailment = build_entailment(config)
 
     score = bentailment(c1,c2)
-    print(box_embeddings.shape)
-    print(score)
 
-    print(o)
+    print(o["end"])
 
     hal_model(inputs)
-    
+

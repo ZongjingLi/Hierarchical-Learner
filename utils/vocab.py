@@ -67,12 +67,3 @@ class WordVocab:
 
     def __len__(self):
         return len(self.words)
-
-sents = ["concept red have same category as concept blue","same category concepts are considered synonyms"]
-
-words = WordVocab()
-words.update(sents)
-words.freeze()
-print(words.word2index)
-print(words["red"])
-print("red" in words.word2index)
