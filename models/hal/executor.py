@@ -4,21 +4,54 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from models.nn import build_entailment
+from models.nn import build_entailment, build_box_registry
 from utils import freeze
+from utils.misc import *
+from utils import *
 
+class UnknownArgument(Exception):
+    def __init__():super()
 
 class HalProgramExecutor(nn.Module):
     NETWORK_REGISTRY = {}
 
     def __init__(self, config):
         super().__init__()
-        #etwork = self.NETWORK_REGISTRY[config.name](config)
+        self.config = config
+
         entailment = build_entailment(config)
+        concept_registry = build_box_registry(config)
+
+        # [Word Vocab]
+
+        sents = ["concept red have same category as concept blue","same category concepts are considered synonyms"]
+
+        self.concept_vocab = WordVocab()
+        self.concept_vocab.update(sents)
+        self.concept_vocab.freeze()
+
+
         self.learner = PipelineLearner(0, entailment)
+        self.translator = config.translator
 
     def forward(self, q):
         return q(self.learner)
+
+    def parse(self,string, translator = None):
+        if translator == None: translator = self.translator
+        def chain(p):
+            head, paras = head_and_paras(p)
+            if paras == None:
+                q = head
+            elif '' in paras:
+                q = translator[head]()
+            else:
+                args = [chain(o) for o in paras]
+                if head in translator: q = translator[head](*args)
+                else: raise UnknownArgument
+            return q
+        program = chain(string)
+        return program
 
 
 class MetaLearner(nn.Module):

@@ -35,7 +35,7 @@ parser.add_argument("--temperature",        default = 0.2)
 parser.add_argument("--method",             default = "uniform")
 parser.add_argument("--offset",             default = [-.15, .15])
 parser.add_argument("--center",             default =[.1, .2])
-parser.add_argument("--entires",            default = 10)
+parser.add_argument("--entries",            default = 10)
 parser.add_argument("--translator",         default = translator)
 
 # training setup 
@@ -56,3 +56,4 @@ parser.add_argument("--ckpt_itr",           default = 50)
 parser.add_argument("--ckpt_path",          default = False)
 
 config = parser.parse_args(args = [])
+
