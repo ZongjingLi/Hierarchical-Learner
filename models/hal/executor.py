@@ -26,7 +26,7 @@ class HalProgramExecutor(nn.Module):
         self.concept_registry = build_box_registry(config)
 
         # [Word Vocab]
-        self.concept_vocab = ["red", "blue", "house"]
+        self.concept_vocab = config.concept_vocab
         
         # args during the execution
         self.kwargs = None 

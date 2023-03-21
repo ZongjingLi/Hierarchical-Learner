@@ -18,6 +18,7 @@ translator = {"scene":Scene,"exist":Exist,"filter":Filter,"union":Union,"unique"
 parser = argparse.ArgumentParser()
 parser.add_argument("--device",             default = device)
 parser.add_argument("--name",               default = "HalAlpha")
+parser.add_argument("--domain",             default = "toy")
 
 # part-centric perception module setup
 parser.add_argument("--imsize",             default = 128)
