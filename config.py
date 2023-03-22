@@ -22,9 +22,11 @@ parser.add_argument("--domain",             default = "toy")
 
 # part-centric perception module setup
 parser.add_argument("--imsize",             default = 128)
+parser.add_argument("--resolution",         default = [128,128])
 parser.add_argument("--perception",         default = "slot_attention")
 parser.add_argument("--num_slots",          default = 5)
 parser.add_argument("--object_dim",         default = 100)
+parser.add_argument("--hidden_dim",         default = 128)
 parser.add_argument("--slot_itrs",          default = 3)
 
 # hiearchical concept model setup

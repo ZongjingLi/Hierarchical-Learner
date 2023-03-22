@@ -109,7 +109,7 @@ class EncoderNet(nn.Module):
 
     def forward(self, x):
         x = self.convs(x)
-        x = x.view(x.shape[0], -1)
+        x = x.reshape(x.shape[0], -1)
 
         x = self.mlp(x)
         return x
@@ -152,7 +152,7 @@ class Monet(nn.Module):
         super().__init__()
         self.channel = channel
         self.attention = AttentionNet(3,base)
-        self.encoder = EncoderNet(height, width,self.channel + 1,base * 2)
+        self.encoder = EncoderNet(height, width,self.channel,base * 2)
         self.decoder = DecoderNet(height, width,base,self.channel)
         self.beta = 0.5
         self.gamma = 0.25
@@ -226,9 +226,9 @@ class Monet(nn.Module):
 class ObjectPriorNet(nn.Module):
     def __init__(self,width,height,base = 128):
         super().__init__()
-        self.encoder_net = EncoderNet(width,height,4,base)
-        self.feature_net = FCBlock(200,4,base,base)
-        self.score_net = FCBlock(200,4,base,1)
+        self.encoder_net = EncoderNet(width,height,3,base)
+        self.feature_net = FCBlock(200,3,base,base)
+        self.score_net = FCBlock(200,2,base,1)
     def forward(self,image,masks):
         masked_image = image * masks
 
@@ -239,7 +239,7 @@ class ObjectPriorNet(nn.Module):
 class MonetPerception(nn.Module):
     def __init__(self, config):
         super().__init__()
-        channel = 4
+        channel = 3
         width,height = config.resolution
         base = config.hidden_dim
         self.object_prior =ObjectPriorNet(width,height,base)
@@ -252,10 +252,11 @@ class MonetPerception(nn.Module):
         self.beta = 0.5
         self.gamma = 0.25
         self.base = base
-        self.num = config.slots
+        self.num = config.num_slots
         
 
     def forward(self, x):
+        #x = x.permute([0,3,1,2])
         scope = torch.ones_like(x[:, 0:1])
         masks = []
         for i in range(self.num):
@@ -276,6 +277,7 @@ class MonetPerception(nn.Module):
         kl_zs = torch.zeros_like(loss)
         for i in range(masks.shape[1]):
             mask = masks[0][i:i+1].unsqueeze(0)
+
             z, kl_z = self.__encoder_step(x, mask)
             #osg = 0.12
             osg = 0.8

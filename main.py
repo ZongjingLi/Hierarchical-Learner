@@ -36,4 +36,3 @@ if __name__ == "__main__":
     print(o["end"])
 
     hal_model(inputs)
-    
