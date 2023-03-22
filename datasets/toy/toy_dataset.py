@@ -35,3 +35,25 @@ class ToyData(Dataset):
         image = self.img_transform(image).permute([1,2,0])
         sample = {"image":image}
         return sample
+
+class ToyDataWithQuestions(nn.Module):
+    def __init__(self, split = "train", resolution = (128,128)):
+        super().__init__()
+
+        assert split in ["train","val","test"]
+        self.split = split
+        self.resolution = resolution
+        self.root_dir = "/Users/melkor/Documents/datasets/toy/images"
+
+        self.img_transform = transforms.Compose(
+            [transforms.ToTensor()]
+        )
+
+    def __len__(self): return 400#len(self.files)
+
+    def __getitem__(self,index):
+        image = Image.open(os.path.join(self.root_dir,"{}.png".format(index)))
+        image = image.convert("RGB").resize(self.resolution) 
+        image = self.img_transform(image).permute([1,2,0])
+        sample = {"image":image}
+        return sample
