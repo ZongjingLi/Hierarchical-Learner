@@ -16,6 +16,19 @@ import json
 
 root = "/Users/melkor/Documents/datasets/"
 
+# load json data
+def load_json(path):
+    with open(path,'r') as f:
+        data = json.load(f)
+        return data
+
+def save_json(data,path):
+    '''input the diction data and save it'''
+    beta_file = json.dumps(data)
+    file = open(path,'w')
+    file.write(beta_file)
+    return True
+
 def random_category():
     return np.random.choice(["tower","boat","house"])
 
@@ -126,7 +139,7 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
         all_questions.append(questions_answer_pairs)
 
     # Done! Time to quit.
-    json.dump(all_questions, root + "toy/" + "train_questions.json")
+    save_json(all_questions, root + "toy/" + "train_questions.json")
     pygame.quit()
     
 
