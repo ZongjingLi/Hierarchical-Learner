@@ -42,6 +42,14 @@ if __name__ == "__main__":
 
     hal_model(inputs)
 
+    optim = torch.optim.Adam(hal_model.parameters() , lr = 2e-2)
+    for epoch in range(4000):
+        o = hal_model.executor(p,**kwargs)
+        loss = 0 - o["end"][0]  - o["end"][-4] 
+        optim.zero_grad()
+        loss.backward()
+        optim.step()
+
     from datasets  import *
     from visualize import *
     data = ToyData("train")
@@ -52,5 +60,5 @@ if __name__ == "__main__":
     outputs = model(inputs)
 
     #visualize_outputs(inputs,outputs)
-    #visualzie_distribution(torch.sigmoid(o["end"]).detach().numpy())
+    visualzie_distribution(torch.sigmoid(o["end"]).detach().numpy())
     plt.show()

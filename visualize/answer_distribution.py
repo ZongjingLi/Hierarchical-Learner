@@ -54,7 +54,7 @@ def visualize_outputs(image, outputs):
 
 def visualzie_distribution(values):
     plt.figure("answer_distribution", frameon = False)
-    plt.tick_params(left = False, right = False , labelleft = False ,
+    plt.tick_params(left = True, right = False , labelleft = True ,
                 labelbottom = True, bottom = False)
     keys = list(range(len(values)))
     plt.bar(keys,values)
