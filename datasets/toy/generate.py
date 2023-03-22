@@ -33,7 +33,10 @@ def random_category():
     return np.random.choice(["tower","boat","house"])
 
 def random_template():
-    "is there any {} object."
+    tp = np.random.randint(0,1)
+    return ["how many {} are there?",
+    "count(filter(scene(),boat))",
+    "one"]
 
 def random_color():
     color = [0, 10, 0]
@@ -126,8 +129,17 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
         # single filteration
         # double filteration
         
-        for i in range(6):
-            template = ["how many {} are there?".format(i),"count(filter(scene(),boat))","one"]
+        for i in range(3):
+            test_category = random_category()
+            flag = False
+            for bind in scene:
+                if not flag and bind[0] == test_category:flag = True
+            gt_ans = "yes" if flag else "no"
+
+            template = ["how many {} are there?".format(test_category),
+            "exist(filter(scene(),{}))".format(test_category),
+            gt_ans]
+            #random_template()
 
             questions_answer_pairs.append(
                 {
@@ -144,4 +156,4 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
     
 
 if __name__ == "__main__":
-    generate_toy_dataset(20, [256,256], True)
+    generate_toy_dataset(200, [256,256], True)

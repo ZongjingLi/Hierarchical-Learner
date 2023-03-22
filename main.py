@@ -27,13 +27,23 @@ if __name__ == "__main__":
     p = hal_model.parse("unique(scene())")
     p = hal_model.parse("exist(filter(scene(),red))")
     p = hal_model.parse("exist(filter(scene(),boat))")
-    p = hal_model.parse("count(scene())")
+    #p = hal_model.parse("count(scene())")
     print(p)
 
     kwargs = {"features":torch.randn([8,200])}
 
     o = hal_model.executor(p,**kwargs)
 
+    print(o["end"])
+
+    optim = torch.optim.Adam(hal_model.parameters(), lr = 2e-2)
+    for epoch in range(10000):
+        o = hal_model.executor(p,**kwargs)
+        loss = 0 - F.logsigmoid(o["end"])
+        loss.backward()
+        optim.step()
+        optim.zero_grad()
+    
     print(o["end"])
 
     hal_model(inputs)

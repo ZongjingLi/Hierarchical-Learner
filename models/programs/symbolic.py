@@ -99,8 +99,9 @@ class Scene(SymbolicProgram):
 
     def __call__(self,executor):
         features = executor.kwargs["features"]
-        logit = torch.ones(features.shape[0] ,device = features.device) * self.BIG_NUMBER
-
+        #logit = torch.ones(features.shape[0] ,device = features.device) * self.BIG_NUMBER
+        score = executor.kwargs["end"]
+        logit = torch.log(score / (1 - score))
         return {"end":logit}
 
 class Unique(SymbolicProgram):

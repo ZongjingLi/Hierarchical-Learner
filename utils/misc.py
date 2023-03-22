@@ -1,4 +1,6 @@
 
+numbers = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+yes_or_no = ["yes", "no"]
 
 def num2word(i):
     assert i < 10

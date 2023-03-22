@@ -26,7 +26,7 @@ from datasets import *
 def train(model,dataset,config):
 
     if config.training_mode == "joint":
-        try:model.allow_obj_score()
+        try:model.perception.allow_obj_score()
         except:pass
 
     logging_root = "./logs"
@@ -68,7 +68,7 @@ def train(model,dataset,config):
 
             working_loss = 0
             # execute the model according to the training mode
-            if config.training_mode == "perception" or config.training_mode == "joint":
+            if True or config.training_mode == "perception" or config.training_mode == "joint":
                 inputs = sample["image"]
                 try:outputs = model.perception(inputs)
                 except:outputs = model(inputs)
@@ -78,7 +78,8 @@ def train(model,dataset,config):
                 recons     = outputs["recons"]
                 masks      = outputs["masks"]
                 loss       = outputs["loss"]
-                working_loss += loss
+                if config.training_mode != "query":
+                    working_loss += loss 
 
             if config.training_mode == "query" or config.training_mode == "joint":
                 query_loss = 0
@@ -89,12 +90,25 @@ def train(model,dataset,config):
 
                         scores   = outputs["object_scores"][b,...,0] - EPS
                         features = outputs["object_features"][b]
+                        
+                        edge = 1e-4
+                        features = torch.cat([features,edge * torch.ones(features.shape)],-1)
 
-                        kwargs = {"features":torch.randn([8,200]),
-                                  "end":torch.log(scores / (1 - scores) ) }
+                        kwargs = {"features":features,
+                                  "end":scores }
 
                         q = model.executor.parse(program)
+                        
                         o = model.executor(q, **kwargs)
+
+                        if answer in numbers:
+                            int_num = torch.tensor(numbers.index(answer)).float()
+                            query_loss += F.mse_loss(int_num,o["end"])
+                        if answer in yes_or_no:
+                            if answer == "yes":query_loss -= F.logsigmoid(o["end"])
+                            else:query_loss -= F.logsigmoid(1 - o["end"])
+                        
+                        #torch.log(torch.sigmoid(o["end"]))
 
                 working_loss += query_loss
 
@@ -113,7 +127,7 @@ def train(model,dataset,config):
                 #torch.save(model,"checkpoints/{}_{}.ckpt".format(config.domain,config.perception))
                 if config.training_mode == "joint" or config.training_mode == "query":
                     writer.add_scalar("qa_loss", query_loss, itrs)
-                if config.training_mode == "perception":
+                if config.training_mode == "perception" or config.training_mode == "joint":
                     # load the images, reconstructions, and other thing
                     num_slots = recons.shape[1]
 
@@ -147,7 +161,9 @@ model = HierarchicalLearner(config)
 slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
 model.perception = slotmodel
 
-config.training_mode = "joint"
+config.training_mode = "query"
+config.warmup_steps = 0
+config.lr = 1e-1
 model.perception.allow_obj_score()
 
 train(model,train_dataset,config)
