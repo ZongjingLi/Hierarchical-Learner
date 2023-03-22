@@ -53,7 +53,7 @@ if __name__ == "__main__":
     from datasets  import *
     from visualize import *
     data = ToyData("train")
-    maps = [111, 132, 14, 124]
+    maps = [12, 33, 15, 25]
     model = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
     inputs = torch.cat([data[idx]["image"].unsqueeze(0) for idx in maps],0)
 
