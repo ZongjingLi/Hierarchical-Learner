@@ -15,6 +15,8 @@ import os
 
 root = "/Users/melkor/Documents/datasets/"
 
+
+
 def random_color():
     color = [0, 10, 0]
     color[np.random.choice([0,2])] = 200
@@ -32,6 +34,7 @@ def generate_toy_dataset(num, resolution = (128,128)):
 
     # Set up the drawing window
     screen = pygame.display.set_mode(resolution)
+    background_image = pygame.image.load("/Users/melkor/Documents/datasets/bg.webp").convert()
 
     # Run until the user asks to quit
     running = True
@@ -47,6 +50,7 @@ def generate_toy_dataset(num, resolution = (128,128)):
 
         # Fill the background with white
         screen.fill((255, 255, 255))
+        screen.blit(background_image, [0, 0])
 
         for _ in range(np.random.choice([1,2,3])):
             scale = np.random.randint(resolution[0]/12,resolution[0] / 9)
