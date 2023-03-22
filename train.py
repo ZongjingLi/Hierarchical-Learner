@@ -90,7 +90,7 @@ def train(model,dataset,config):
 
             if itrs % config.ckpt_itr == 0:
                 writer.add_scalar("working_loss", working_loss, itrs)
-                torch.save(model,"checkpoints/slot64.ckpt")
+                torch.save(model,"checkpoints/{}_{}.ckpt".format(config.domain,config.perception))
 
                 if config.training_mode == "perception":
                     # load the images, reconstructions, and other thing
@@ -121,9 +121,11 @@ from config import *
 train_dataset = PartNet("train")
 train_dataset = SpriteWithQuestions("train",resolution = (config.imsize,config.imsize))
 train_dataset = Clevr4(config)
+train_dataset = ToyData("train")
+
 model = HierarchicalLearner(config)
 #model = SlotAttentionParser64(5,100,5)
-model = SlotAttentionParser(5,100,5)
-model = torch.load("checkpoints/slot64.ckpt")
+model = SlotAttentionParser(5,100,8)
+#model = torch.load("checkpoints/slot64.ckpt")
 
 train(model,train_dataset,config)
