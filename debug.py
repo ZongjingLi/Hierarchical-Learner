@@ -53,12 +53,14 @@ if __name__ == "__main__":
     from datasets  import *
     from visualize import *
     data = ToyData("train")
-    maps = [15,13,2,6]
+    maps = [11, 32, 4, 24]
     model = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
     inputs = torch.cat([data[idx]["image"].unsqueeze(0) for idx in maps],0)
 
     outputs = model(inputs)
 
-    #visualize_outputs(inputs,outputs)
-    visualzie_distribution(torch.sigmoid(o["end"]).detach().numpy())
+    visualize_outputs(inputs,outputs)
+    #visualize_distribution(torch.sigmoid(o["end"]).detach().numpy())
+    print(outputs["object_scores"].shape)
+    visualize_distribution(outputs["object_scores"][0][...,0].detach().numpy())
     plt.show()

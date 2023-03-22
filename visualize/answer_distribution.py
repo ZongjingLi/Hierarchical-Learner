@@ -52,7 +52,7 @@ def visualize_outputs(image, outputs):
     plt.imshow(gt_grid.permute(1,2,0).cpu().detach().numpy())
     plt.savefig("outputs/gt_image.png")
 
-def visualzie_distribution(values):
+def visualize_distribution(values):
     plt.figure("answer_distribution", frameon = False)
     plt.tick_params(left = True, right = False , labelleft = True ,
                 labelbottom = True, bottom = False)
