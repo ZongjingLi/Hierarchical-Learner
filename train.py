@@ -124,10 +124,11 @@ def train(model,dataset,config):
 
             if itrs % config.ckpt_itr == 0:
                 writer.add_scalar("working_loss", working_loss, itrs)
-                #torch.save(model,"checkpoints/{}_{}.ckpt".format(config.domain,config.perception))
+                torch.save(model,"checkpoints/joint_{}_{}.ckpt".format(config.domain,config.perception))
                 if config.training_mode == "joint" or config.training_mode == "query":
                     writer.add_scalar("qa_loss", query_loss, itrs)
-                if config.training_mode == "perception" or config.training_mode == "joint":
+                writer.add_scalar("vision_loss", loss, itrs)
+                if True or config.training_mode == "perception" or config.training_mode == "joint":
                     # load the images, reconstructions, and other thing
                     num_slots = recons.shape[1]
 
@@ -161,9 +162,8 @@ model = HierarchicalLearner(config)
 slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
 model.perception = slotmodel
 
-config.training_mode = "query"
-config.warmup_steps = 0
-config.lr = 1e-1
+config.training_mode = "joint"
+config.warmup_steps = 500
 model.perception.allow_obj_score()
 
 train(model,train_dataset,config)

@@ -34,7 +34,7 @@ if __name__ == "__main__":
     p = hal_model.executor.parse("filter(scene(),boat)")
     print(p)
 
-    kwargs = {"features":torch.randn([8,200])}
+    kwargs = {"features":torch.randn([8,200]),"end":torch.ones([8])}
 
     o = hal_model.executor(p,**kwargs)
 
