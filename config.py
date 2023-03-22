@@ -44,7 +44,7 @@ parser.add_argument("--translator",         default = translator)
 # training setup 
 parser.add_argument("--training_mode",      default = "perception")
 parser.add_argument("--epochs",             default = 1000)
-parser.add_argument("--batch_size",         default = 2)
+parser.add_argument("--batch_size",         default = 4)
 parser.add_argument("--optimizer",          default = "Adam")
 parser.add_argument("--lr",                 default = 2e-4)
 parser.add_argument("--warmup",             default = True)
