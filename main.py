@@ -26,7 +26,8 @@ if __name__ == "__main__":
     p = hal_model.parse("exist(scene())")
     p = hal_model.parse("unique(scene())")
     p = hal_model.parse("exist(filter(scene(),red))")
-    p = hal_model.executor.parse("exist(filter(scene(),boat))")
+    p = hal_model.parse("exist(filter(scene(),boat))")
+    p = hal_model.parse("count(scene())")
     print(p)
 
     kwargs = {"features":torch.randn([8,200])}

@@ -13,7 +13,7 @@ from models import *
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-translator = {"scene":Scene,"exist":Exist,"filter":Filter,"union":Union,"unique":Unique}
+translator = {"scene":Scene,"exist":Exist,"filter":Filter,"union":Union,"unique":Unique,"count":Count}
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--device",             default = device)

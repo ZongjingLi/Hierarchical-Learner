@@ -24,6 +24,11 @@ from models.percept.slot_attention import SlotAttentionParser, SlotAttentionPars
 from datasets import *
 
 def train(model,dataset,config):
+
+    if config.training_mode == "joint":
+        try:model.allow_obj_score()
+        except:pass
+
     logging_root = "./logs"
     ckpt_dir     = os.path.join(logging_root, 'checkpoints')
     events_dir   = os.path.join(logging_root, 'events')
@@ -63,9 +68,10 @@ def train(model,dataset,config):
 
             working_loss = 0
             # execute the model according to the training mode
-            if config.training_mode == "perception":
+            if config.training_mode == "perception" or config.training_mode == "joint":
                 inputs = sample["image"]
-                outputs = model(inputs)
+                try:outputs = model.perception(inputs)
+                except:outputs = model(inputs)
 
                 # get the components
                 full_recon = outputs["full_recons"]
@@ -74,10 +80,24 @@ def train(model,dataset,config):
                 loss       = outputs["loss"]
                 working_loss += loss
 
-            if config.training_mode == "query":
-                pass
-            if config.training_mode == "joint":
-                pass
+            if config.training_mode == "query" or config.training_mode == "joint":
+                query_loss = 0
+                for question in sample["question"]:
+                    for b in range(len(question["program"])):
+                        program = question["program"][b] # string program
+                        answer  = question["answer"][b]  # string answer
+
+                        scores   = outputs["object_scores"][b,...,0] - EPS
+                        features = outputs["object_features"][b]
+
+                        kwargs = {"features":torch.randn([8,200]),
+                                  "end":torch.log(scores / (1 - scores) ) }
+
+                        q = model.executor.parse(program)
+                        o = model.executor(q, **kwargs)
+
+                working_loss += query_loss
+
              # calculate the working loss of the batch
 
             # back propagation to update the working loss
@@ -90,8 +110,9 @@ def train(model,dataset,config):
 
             if itrs % config.ckpt_itr == 0:
                 writer.add_scalar("working_loss", working_loss, itrs)
-                torch.save(model,"checkpoints/{}_{}.ckpt".format(config.domain,config.perception))
-
+                #torch.save(model,"checkpoints/{}_{}.ckpt".format(config.domain,config.perception))
+                if config.training_mode == "joint" or config.training_mode == "query":
+                    writer.add_scalar("qa_loss", query_loss, itrs)
                 if config.training_mode == "perception":
                     # load the images, reconstructions, and other thing
                     num_slots = recons.shape[1]
@@ -118,14 +139,15 @@ def train(model,dataset,config):
         writer.add_scalar("epoch_loss",total_loss,epoch)
 
 from config import *
-train_dataset = PartNet("train")
-train_dataset = SpriteWithQuestions("train",resolution = (config.imsize,config.imsize))
-train_dataset = Clevr4(config)
+
 train_dataset = ToyData("train")
+train_dataset = ToyDataWithQuestions("train")
 
 model = HierarchicalLearner(config)
-#model = SlotAttentionParser64(5,100,5)
-model = SlotAttentionParser(5,100,5)
-model = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
+slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
+model.perception = slotmodel
+
+config.training_mode = "joint"
+model.perception.allow_obj_score()
 
 train(model,train_dataset,config)

@@ -126,8 +126,8 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
         # single filteration
         # double filteration
         
-        for _ in range(6):
-            template = ["how many boat are there?","count(filter(scene(),boat))","one"]
+        for i in range(6):
+            template = ["how many {} are there?".format(i),"count(filter(scene(),boat))","one"]
 
             questions_answer_pairs.append(
                 {
