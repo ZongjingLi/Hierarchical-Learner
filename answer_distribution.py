@@ -34,18 +34,19 @@ def visualize_outputs(image, outputs):
     plt.imshow(recon_grid.permute(1,2,0).cpu().detach().numpy())
 
     # [Draw Full Recon]
-    plt.figure("Full Recons")
+    plt.figure("Full Recons",frameon=False)
     grid = torchvision.utils.make_grid(full_recon.cpu().detach().permute([0,3,1,2]),normalize=True,nrow=config.batch_size)
     plt.tick_params(left = False, right = False , labelleft = False ,
                 labelbottom = False, bottom = False)
     plt.imshow(grid.permute(1,2,0).cpu().detach().numpy())
 
     # [Draw GT Image]
-    plt.figure("GT Image")
+    plt.figure("GT Image",frameon=False)
     plt.tick_params(left = False, right = False , labelleft = False ,
                 labelbottom = False, bottom = False)
     gt_grid = torchvision.utils.make_grid(image.cpu().detach().permute([0,3,1,2]),normalize=True,nrow=config.batch_size)
     plt.imshow(gt_grid.permute(1,2,0).cpu().detach().numpy())
+    plt.savefig("outputs/gt_image.png")
 
 
 if __name__ == "__main__":
