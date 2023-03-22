@@ -126,6 +126,6 @@ train_dataset = ToyData("train")
 model = HierarchicalLearner(config)
 #model = SlotAttentionParser64(5,100,5)
 model = SlotAttentionParser(5,100,5)
-model = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
+#model = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
 
 train(model,train_dataset,config)
