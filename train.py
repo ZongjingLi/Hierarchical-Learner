@@ -22,7 +22,7 @@ from datasets.sprites.sprite_dataset import SpriteWithQuestions
 from models.hal.model import HierarchicalLearner
 from models.percept.slot_attention import SlotAttentionParser, SlotAttentionParser64
 from datasets import *
-from visualize.answer_distribution import visualize_outputs
+from visualize.answer_distribution import visualize_outputs,visualize_scores
 
 def train(model,dataset,config):
 
@@ -80,7 +80,7 @@ def train(model,dataset,config):
                 masks      = outputs["masks"]
                 loss       = outputs["loss"]
                 if config.training_mode != "query":
-                    working_loss += loss 
+                    working_loss += loss * 100
 
             if config.training_mode == "query" or config.training_mode == "joint":
                 query_loss = 0
@@ -101,7 +101,7 @@ def train(model,dataset,config):
                         q = model.executor.parse(program)
                         
                         o = model.executor(q, **kwargs)
-                        print("Batch:{}".format(b),q,o["end"],answer)
+                        #print("Batch:{}".format(b),q,o["end"],answer)
                         if answer in numbers:
                             int_num = torch.tensor(numbers.index(answer)).float()
                             query_loss += F.mse_loss(int_num,o["end"])
@@ -109,6 +109,7 @@ def train(model,dataset,config):
                             if answer == "yes":query_loss -= F.logsigmoid(o["end"])
                             else:query_loss -= F.logsigmoid(1 - o["end"])
                         visualize_outputs(inputs,outputs)
+                        visualize_scores(outputs["object_scores"][:,:,0].detach().numpy())
 
                 working_loss += query_loss
 
@@ -157,13 +158,14 @@ from config import *
 
 train_dataset = ToyDataWithQuestions("train")
 
-#model = HierarchicalLearner(config)
-#slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
-#model.perception = slotmodel
+model = HierarchicalLearner(config)
+slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
+model.perception = slotmodel
 
 config.training_mode = "joint"
 config.warmup_steps = 500
+model.scene_perception.allow_obj_score()
 
-model = torch.load("checkpoints/joint_toy_slot_attention.ckpt",map_location = config.device)
+#model = torch.load("checkpoints/joint_toy_slot_attention.ckpt",map_location = config.device)
 
 train(model,train_dataset,config)

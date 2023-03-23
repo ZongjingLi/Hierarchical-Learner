@@ -58,6 +58,7 @@ if __name__ == "__main__":
     ims = torch.cat([data[idx]["image"].unsqueeze(0) for idx in maps],0)
     outputs = hal_model.scene_perception(ims)
     visualize_outputs(ims,outputs)
+    visualize_scores(outputs["object_scores"][:,:,0].detach().numpy())
     
     """
     inputs = {"image":ims,
