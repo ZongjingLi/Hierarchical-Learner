@@ -163,7 +163,7 @@ slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config
 model.perception = slotmodel
 
 config.training_mode = "joint"
-config.warmup_steps = 500
+config.warmup_steps = 50
 model.scene_perception.allow_obj_score()
 
 #model = torch.load("checkpoints/joint_toy_slot_attention.ckpt",map_location = config.device)
