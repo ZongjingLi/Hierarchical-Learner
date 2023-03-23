@@ -10,10 +10,10 @@ from utils.misc import *
 from utils import *
 
 class UnknownArgument(Exception):
-    def __init__():super()
+    def __init__(self):super()
 
 class UnknownConceptError(Exception):
-    def __init__():super()
+    def __init__(self):super()
 
 class HalProgramExecutor(nn.Module):
     NETWORK_REGISTRY = {}
@@ -43,8 +43,10 @@ class HalProgramExecutor(nn.Module):
     def get_concept_embedding(self,concept):
         try:
             concept_index = self.concept_vocab.index(concept)
-            return self.concept_registry(torch.tensor(concept_index).unsqueeze(0))
+            idx = torch.tensor(concept_index).unsqueeze(0)#.to(self.config.device)
+            return self.concept_registry(idx)
         except:
+            print(concept_index)
             raise UnknownConceptError
 
     def forward(self, q, **kwargs):

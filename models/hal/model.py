@@ -33,11 +33,35 @@ class HierarchicalLearner(nn.Module):
     def forward(self, inputs):
 
         # [Parse the Input Scenes]
-        part_centric_output = self.scene_perception(inputs["images"])
+        part_centric_output = self.scene_perception(inputs["image"])
 
-        scene_parsed = part_centric_output
+        # get the components
+        full_recon = part_centric_output["full_recons"]
+        recons     = part_centric_output["recons"]
+        masks      = part_centric_output["masks"]
+        loss       = part_centric_output["loss"]
 
-        programs = inputs["programs"]
 
-        outputs = {}
+
+        for question in inputs["question"]:
+            for b in range(len(question["program"])):
+                program = question["program"][b] # string program
+                answer  = question["answer"][b]  # string answer
+
+                scores   = part_centric_output["object_scores"][b,...,0] - EPS
+                features = part_centric_output["object_features"][b]
+
+                edge = 1e-4
+                features = torch.cat([features,edge * torch.ones(features.shape)],-1)
+
+                kwargs = {"features":features,
+                                  "end":scores }
+
+                q = self.executor.parse(program)
+                        
+                o = self.executor(q, **kwargs)
+                print("Batch:{} P:{} A:{}".format(b,q,o))
+
+
+        outputs = {**part_centric_output}
         return outputs

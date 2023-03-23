@@ -22,6 +22,7 @@ from datasets.sprites.sprite_dataset import SpriteWithQuestions
 from models.hal.model import HierarchicalLearner
 from models.percept.slot_attention import SlotAttentionParser, SlotAttentionParser64
 from datasets import *
+from visualize.answer_distribution import visualize_outputs
 
 def train(model,dataset,config):
 
@@ -69,7 +70,7 @@ def train(model,dataset,config):
             working_loss = 0
             # execute the model according to the training mode
             if True or config.training_mode == "perception" or config.training_mode == "joint":
-                inputs = sample["image"]
+                inputs = sample["image"].to(config.device)
                 try:outputs = model.perception(inputs)
                 except:outputs = model(inputs)
 
@@ -90,7 +91,7 @@ def train(model,dataset,config):
 
                         scores   = outputs["object_scores"][b,...,0] - EPS
                         features = outputs["object_features"][b]
-                        
+
                         edge = 1e-4
                         features = torch.cat([features,edge * torch.ones(features.shape)],-1)
 
@@ -100,14 +101,14 @@ def train(model,dataset,config):
                         q = model.executor.parse(program)
                         
                         o = model.executor(q, **kwargs)
-
+                        print("Batch:{}".format(b),q,o["end"],answer)
                         if answer in numbers:
                             int_num = torch.tensor(numbers.index(answer)).float()
                             query_loss += F.mse_loss(int_num,o["end"])
                         if answer in yes_or_no:
                             if answer == "yes":query_loss -= F.logsigmoid(o["end"])
                             else:query_loss -= F.logsigmoid(1 - o["end"])
-                        
+                        visualize_outputs(inputs,outputs)
                         #torch.log(torch.sigmoid(o["end"]))
 
                 working_loss += query_loss
@@ -116,8 +117,8 @@ def train(model,dataset,config):
 
             # back propagation to update the working loss
             optimizer.zero_grad()
-            working_loss.backward()
-            optimizer.step()
+            #working_loss.backward()
+            #optimizer.step()
             total_loss += working_loss.detach()
 
             sys.stdout.write ("\rEpoch: {}, Itrs: {} Loss: {}, Time: {}".format(epoch + 1, itrs, working_loss,datetime.timedelta(seconds=time.time() - start)))
@@ -155,15 +156,15 @@ def train(model,dataset,config):
 
 from config import *
 
-train_dataset = ToyData("train")
 train_dataset = ToyDataWithQuestions("train")
 
-model = HierarchicalLearner(config)
-slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
-model.perception = slotmodel
+#model = HierarchicalLearner(config)
+#slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
+#model.perception = slotmodel
 
 config.training_mode = "joint"
 config.warmup_steps = 500
-model.perception.allow_obj_score()
+
+model = torch.load("checkpoints/joint_toy_slot_attention.ckpt",map_location = config.device)
 
 train(model,train_dataset,config)

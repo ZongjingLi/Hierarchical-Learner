@@ -40,8 +40,6 @@ if __name__ == "__main__":
 
     print(o["end"])
 
-    hal_model(inputs)
-
     optim = torch.optim.Adam(hal_model.parameters() , lr = 2e-2)
     for epoch in range(4000):
         o = hal_model.executor(p,**kwargs)
@@ -52,15 +50,30 @@ if __name__ == "__main__":
 
     from datasets  import *
     from visualize import *
-    data = ToyData("train")
+    data = ToyDataWithQuestions("train")
     maps = [12, 33, 15, 25]
-    model = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
-    inputs = torch.cat([data[idx]["image"].unsqueeze(0) for idx in maps],0)
 
+    ims = torch.cat([data[idx]["image"].unsqueeze(0) for idx in maps],0)
+
+    inputs = {"image":ims,
+            "question":[
+                {
+                    "program":[
+                        "exist(filter(scene(),house))",
+                        "exist(filter(scene(),house))",
+                        "exist(filter(scene(),house))",
+                        "exist(filter(scene(),house))"
+                        ],
+                    "answer":[0,1,2,3]
+                }
+                ]}
+
+    model = torch.load("checkpoints/joint_toy_slot_attention.ckpt",map_location=config.device)
     outputs = model(inputs)
-
     visualize_outputs(inputs,outputs)
+    
     #visualize_distribution(torch.sigmoid(o["end"]).detach().numpy())
-    print(outputs["object_scores"].shape)
-    visualize_distribution(outputs["object_scores"][0][...,0].detach().numpy())
+    #print(outputs["object_scores"].shape)
+    #visualize_distribution(outputs["object_scores"][0][...,0].detach().numpy())
+    
     plt.show()
