@@ -109,7 +109,6 @@ def train(model,dataset,config):
                             if answer == "yes":query_loss -= F.logsigmoid(o["end"])
                             else:query_loss -= F.logsigmoid(1 - o["end"])
                         visualize_outputs(inputs,outputs)
-                        #torch.log(torch.sigmoid(o["end"]))
 
                 working_loss += query_loss
 

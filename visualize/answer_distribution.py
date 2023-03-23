@@ -58,3 +58,8 @@ def visualize_distribution(values):
                 labelbottom = True, bottom = False)
     keys = list(range(len(values)))
     plt.bar(keys,values)
+
+def visualize_scores(scores):
+    plt.figure("scores", frameon = False)
+    plt.tick_params(left = True, right = False , labelleft = True ,
+                labelbottom = True, bottom = False)
