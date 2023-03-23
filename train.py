@@ -104,12 +104,10 @@ def train(model,dataset,config):
                         #print("Batch:{}".format(b),q,o["end"],answer)
                         if answer in numbers:
                             int_num = torch.tensor(numbers.index(answer)).float()
-                            query_loss += F.mse_loss(int_num,o["end"])
+                            query_loss += F.mse_loss(int_num + 1,o["end"])
                         if answer in yes_or_no:
                             if answer == "yes":query_loss -= F.logsigmoid(o["end"])
                             else:query_loss -= F.logsigmoid(1 - o["end"])
-                        visualize_outputs(inputs,outputs)
-                        visualize_scores(outputs["object_scores"][:,:,0].detach().numpy())
 
                 working_loss += query_loss
 
@@ -117,8 +115,8 @@ def train(model,dataset,config):
 
             # back propagation to update the working loss
             optimizer.zero_grad()
-            #working_loss.backward()
-            #optimizer.step()
+            working_loss.backward()
+            optimizer.step()
             total_loss += working_loss.detach()
 
             sys.stdout.write ("\rEpoch: {}, Itrs: {} Loss: {}, Time: {}".format(epoch + 1, itrs, working_loss,datetime.timedelta(seconds=time.time() - start)))
@@ -148,7 +146,10 @@ def train(model,dataset,config):
                     gt_grid = torchvision.utils.make_grid(sample["image"].cpu().detach().permute([0,3,1,2]),normalize=True,nrow=config.batch_size)
                     writer.add_image("GT Image",gt_grid.cpu().detach().numpy(),itrs)
 
-                    writer.add_image("Backup",gt_grid.cpu().detach().numpy(),itrs)             
+                    writer.add_image("Backup",gt_grid.cpu().detach().numpy(),itrs)    
+
+                    visualize_outputs(inputs,outputs)
+                    visualize_scores(outputs["object_scores"][:,:,0].detach().numpy())   
 
             itrs += 1
         total_loss = total_loss/len(dataloader)
@@ -163,7 +164,7 @@ slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config
 model.perception = slotmodel
 
 config.training_mode = "joint"
-config.warmup_steps = 50
+config.warmup_steps = 500
 model.scene_perception.allow_obj_score()
 
 #model = torch.load("checkpoints/joint_toy_slot_attention.ckpt",map_location = config.device)

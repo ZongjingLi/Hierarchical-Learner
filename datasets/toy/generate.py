@@ -14,9 +14,17 @@ import pygame
 import os
 import json
 
+
 root = "/Users/melkor/Documents/datasets/"
 
 # load json data
+numbers = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+
+def num2word(i):
+    assert i < 10
+    numbers = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+    return numbers[i]
+
 def load_json(path):
     with open(path,'r') as f:
         data = json.load(f)
@@ -73,6 +81,7 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
         # Fill the background with white
         screen.fill((255, 255, 255))
         screen.blit(background_image, [0, 0])
+        scene = []
 
         for _ in range(np.random.choice([1,2,3])):
             scale = np.random.randint(resolution[0]/12,resolution[0] / 9)
@@ -82,7 +91,7 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
 
             # control the portion of different kind of objects generated
             category = np.random.choice([0,1,2], p = [0.2, 0.4, 0.4])
-            scene = []
+            
             if category == 0:
                 # draw tower
                 top_color = random_color()
@@ -130,16 +139,16 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
         # double filteration
         
         for i in range(3):
+            # generate three concepts to perform 1st order filteration
             test_category = random_category()
             flag = False
             for bind in scene:
                 if not flag and bind[0] == test_category:flag = True
             gt_ans = "yes" if flag else "no"
 
-            template = ["how many {} are there?".format(test_category),
+            template = ["is there any {} are there?".format(test_category),
             "exist(filter(scene(),{}))".format(test_category),
             gt_ans]
-            #random_template()
 
             questions_answer_pairs.append(
                 {
@@ -148,6 +157,38 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
             "answer":template[2]
                 }
             )
+        for i in range(2):
+            # generate two conecpts to perform 
+            count_category = random_category()
+            count = 0
+            for bind in scene:
+                if  bind[0] == test_category:count += 1
+            gt_ans = numbers[count]
+
+            template = ["how many {} are there?".format(count_category),
+            "count(filter(scene(),{}))".format(count_category),
+            gt_ans]
+
+            questions_answer_pairs.append(
+                {
+            "question":template[0],
+            "program":template[1],
+            "answer":template[2]
+                }
+            )
+
+        template = ["how many objects are there?",
+            "count(scene())",
+            num2word(len(scene))]
+
+        questions_answer_pairs.append(
+                {
+            "question":template[0],
+            "program":template[1],
+            "answer":template[2]
+                }
+            )
+
         all_questions.append(questions_answer_pairs)
 
     # Done! Time to quit.
