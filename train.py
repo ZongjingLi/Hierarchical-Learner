@@ -71,7 +71,7 @@ def train(model,dataset,config):
             # execute the model according to the training mode
             if True or config.training_mode == "perception" or config.training_mode == "joint":
                 inputs = sample["image"].to(config.device)
-                try:outputs = model.perception(inputs)
+                try:outputs = model.scene_perception(inputs)
                 except:outputs = model(inputs)
 
                 # get the components
@@ -160,8 +160,8 @@ from config import *
 train_dataset = ToyDataWithQuestions("train")
 
 model = HierarchicalLearner(config)
-slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
-model.perception = slotmodel
+#slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
+#model.perception = slotmodel
 
 config.training_mode = "joint"
 config.warmup_steps = 500
