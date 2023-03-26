@@ -43,7 +43,7 @@ class HalProgramExecutor(nn.Module):
     def get_concept_embedding(self,concept):
         try:
             concept_index = self.concept_vocab.index(concept)
-            idx = torch.tensor(concept_index).unsqueeze(0)#.to(self.config.device)
+            idx = torch.tensor(concept_index).unsqueeze(0).to(self.config.device)
             return self.concept_registry(idx)
         except:
             print(concept_index)

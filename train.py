@@ -157,11 +157,18 @@ def train(model,dataset,config):
 
 from config import *
 
+
+
 train_dataset = ToyDataWithQuestions("train")
 
 model = HierarchicalLearner(config)
 #slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
 #model.perception = slotmodel
+
+
+# [Setup for the Joint Training Case]
+
+# [Setup for the Perception Module Training]
 
 config.training_mode = "joint"
 config.warmup_steps = 500
@@ -169,4 +176,6 @@ model.scene_perception.allow_obj_score()
 
 #model = torch.load("checkpoints/joint_toy_slot_attention.ckpt",map_location = config.device)
 
+model.config.device = config.device
+model = model.to(config.device)
 train(model,train_dataset,config)
