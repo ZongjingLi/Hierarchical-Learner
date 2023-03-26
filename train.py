@@ -157,25 +157,47 @@ def train(model,dataset,config):
 
 from config import *
 
+# [Experiment Config]
+exp_parser = argparse.ArgumentParser()
+exp_parser.add_argument("--name",default = "Zilliax")
+exp_parser.add_argument("--training_mode")
+exp_parser.add_argument("--pretrain_perception",default = False)
+exp_parser.add_argument("--pretrain_joint",default = False)
+experiment_config = exp_parser.parse_args()
 
-
-train_dataset = ToyDataWithQuestions("train")
-
-model = HierarchicalLearner(config)
-#slotmodel = torch.load("checkpoints/toy_slot_attention.ckpt",map_location=config.device)
-#model.perception = slotmodel
-
-
-# [Setup for the Joint Training Case]
+print("Experiment Id: {}".format(experiment_config.name))
 
 # [Setup for the Perception Module Training]
+if experiment_config.training_mode == "perception":
+    train_dataset = ToyData("train")
+    # adjust perception based on the pretrain model
+    if experiment_config.pretrain_perception:
+        config.training_mode == "perception"
+        model = torch.load(experiment_config.pretrain_perception,map_location = config.device)
+    else: model = HierarchicalLearner(config)
 
-config.training_mode = "joint"
-config.warmup_steps = 500
-model.scene_perception.allow_obj_score()
+    # [Setup model device and more on objectness]
+    model.executor.config = config.device
+    model.scene_perception.ban_obj_score()
 
-#model = torch.load("checkpoints/joint_toy_slot_attention.ckpt",map_location = config.device)
+    # Put the model on the device
+    model = model.to(config.device)
+    train(model,train_dataset,config)
 
-model.config.device = config.device
-model = model.to(config.device)
-train(model,train_dataset,config)
+# [Setup for the Joint Training Case]
+if experiment_config.training_mode == "joint":
+    train_dataset = ToyDataWithQuestions("train")
+    config.training_mode = "joint"
+    config.warmup_steps = 500
+    model.scene_perception.allow_obj_score()
+
+    if experiment_config.pretrain_joint:
+        model.scene_perception = torch.load(experiment_config.pretrain_joint,map_location = config.device)
+
+    # [Setup model device and more on objectness]
+    model.executor.config = config.device
+    model.scene_perception.allow_obj_score()
+
+    # Put the model on the device
+    model = model.to(config.device)
+    train(model,train_dataset,config)

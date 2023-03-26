@@ -1,1 +1,1 @@
-python3 train.py --
+python3 train.py --name="Boomsday" --training_mode="perception"
