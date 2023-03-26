@@ -163,9 +163,10 @@ exp_parser.add_argument("--name",default = "Zilliax")
 exp_parser.add_argument("--training_mode")
 exp_parser.add_argument("--pretrain_perception",default = False)
 exp_parser.add_argument("--pretrain_joint",default = False)
+exp_parser.add_argument("--save_path",default = "checkpoints/")
 experiment_config = exp_parser.parse_args()
 
-print("Experiment Id: {}".format(experiment_config.name))
+print("Experiment Id: {} Mode: {}".format(experiment_config.name,experiment_config.training_mode))
 
 # [Setup for the Perception Module Training]
 if experiment_config.training_mode == "perception":
@@ -189,15 +190,16 @@ if experiment_config.training_mode == "joint":
     train_dataset = ToyDataWithQuestions("train")
     config.training_mode = "joint"
     config.warmup_steps = 500
-    model.scene_perception.allow_obj_score()
+
+    train_model = HierarchicalLearner(config)
 
     if experiment_config.pretrain_joint:
-        model.scene_perception = torch.load(experiment_config.pretrain_joint,map_location = config.device)
+        train_model.scene_perception = torch.load(experiment_config.pretrain_joint,map_location = config.device)
 
     # [Setup model device and more on objectness]
-    model.executor.config = config.device
-    model.scene_perception.allow_obj_score()
+    train_model.executor.config = config.device
+    train_model.scene_perception.allow_obj_score()
 
     # Put the model on the device
-    model = model.to(config.device)
-    train(model,train_dataset,config)
+    train_model = train_model.to(config.device)
+    train(train_model,train_dataset,config)
