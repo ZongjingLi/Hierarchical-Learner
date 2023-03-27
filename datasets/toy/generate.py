@@ -162,7 +162,7 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
             count_category = random_category()
             count = 0
             for bind in scene:
-                if  bind[0] == test_category:count += 1
+                if  bind[0] == count_category:count += 1
             gt_ans = numbers[count]
 
             template = ["how many {} are there?".format(count_category),

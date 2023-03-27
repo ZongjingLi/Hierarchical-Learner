@@ -1,1 +1,1 @@
-python3 train.py --name="KFT" --training_mode="joint" --pretrain_joint="checkpoints/toy_slot_attention.ckpt" --"save_path"="checkpoints/debug_save.ckpt"
+python3 train.py --name="KFT" --training_mode="joint" --pretrain_joint="checkpoints/toy_slot_attention.ckpt" --"save_path"="checkpoints/Boomsday_toy_slot_attention.ckpt"

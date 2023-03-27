@@ -50,7 +50,7 @@ class ToyDataWithQuestions(nn.Module):
     def __len__(self): return 200#len(self.files)
 
     def __getitem__(self,index):
-        image = Image.open(os.path.join(self.root_dir,"images","{}.png".format(index)))
+        image = Image.open(os.path.join(self.root_dir,"images","{}.png".format( 1 + index)))
         image = image.convert("RGB").resize(self.resolution) 
         image = self.img_transform(image).permute([1,2,0])
         sample = {"image":image,"question":self.questions[index]}

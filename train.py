@@ -24,7 +24,7 @@ from models.percept.slot_attention import SlotAttentionParser, SlotAttentionPars
 from datasets import *
 from visualize.answer_distribution import visualize_outputs,visualize_scores
 
-def train(model,dataset,config):
+def train(model,dataset,config,name):
 
     if config.training_mode == "joint":
         try:model.perception.allow_obj_score()
@@ -123,7 +123,10 @@ def train(model,dataset,config):
 
             if itrs % config.ckpt_itr == 0:
                 writer.add_scalar("working_loss", working_loss, itrs)
-                torch.save(model,"checkpoints/joint_{}_{}.ckpt".format(config.domain,config.perception))
+                if config.training_mode == "perception":
+                    torch.save(model.scene_perception,"checkpoints/{}_{}_{}.ckpt".format(name,config.domain,config.perception))
+                else:
+                    torch.save(model,"checkpoints/{}_joint_{}_{}.ckpt".format(name,config.domain,config.perception))
                 if config.training_mode == "joint" or config.training_mode == "query":
                     writer.add_scalar("qa_loss", query_loss, itrs)
                 writer.add_scalar("vision_loss", loss, itrs)
@@ -170,11 +173,12 @@ print("Experiment Id: {} Mode: {}".format(experiment_config.name,experiment_conf
 
 # [Setup for the Perception Module Training]
 if experiment_config.training_mode == "perception":
+    model = HierarchicalLearner(config)
     train_dataset = ToyData("train")
     # adjust perception based on the pretrain model
     if experiment_config.pretrain_perception:
         config.training_mode == "perception"
-        model = torch.load(experiment_config.pretrain_perception,map_location = config.device)
+        model.scene_perception = torch.load(experiment_config.pretrain_perception,map_location = config.device)
     else: model = HierarchicalLearner(config)
 
     # [Setup model device and more on objectness]
@@ -183,7 +187,7 @@ if experiment_config.training_mode == "perception":
 
     # Put the model on the device
     model = model.to(config.device)
-    train(model,train_dataset,config)
+    train(model,train_dataset,config,experiment_config.name)
 
 # [Setup for the Joint Training Case]
 if experiment_config.training_mode == "joint":
@@ -197,9 +201,9 @@ if experiment_config.training_mode == "joint":
         train_model.scene_perception = torch.load(experiment_config.pretrain_joint,map_location = config.device)
 
     # [Setup model device and more on objectness]
-    train_model.executor.config = config.device
+    train_model.executor.config = config
     train_model.scene_perception.allow_obj_score()
 
     # Put the model on the device
     train_model = train_model.to(config.device)
-    train(train_model,train_dataset,config)
+    train(train_model,train_dataset,config, experiment_config.name)
