@@ -80,7 +80,7 @@ def train(model,dataset,config,name):
                 masks      = outputs["masks"]
                 loss       = outputs["loss"]
                 if config.training_mode != "query":
-                    working_loss += loss * 100
+                    working_loss += loss * 1000
 
             if config.training_mode == "query" or config.training_mode == "joint":
                 query_loss = 0
@@ -109,7 +109,7 @@ def train(model,dataset,config,name):
                             if answer == "yes":query_loss -= F.logsigmoid(o["end"])
                             else:query_loss -= F.logsigmoid(1 - o["end"])
 
-                working_loss += query_loss
+                working_loss += query_loss * 0.1
 
              # calculate the working loss of the batch
 

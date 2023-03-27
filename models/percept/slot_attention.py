@@ -183,7 +183,7 @@ class FeatureDecoder(nn.Module):
         self.register_buffer('y_grid', y_grid.view((1, 1) + y_grid.shape))
         self.bias = 0
 
-        self.object_score_marker   = nn.Linear(64 * 64 * 16,1)
+        self.object_score_marker   = nn.Linear(128 * 128 * 32,1)
         #self.object_score_marker   = FCBlock(256,2,64 * 64 * 16,1)
         #self.object_feature_marker = FCBlock(256,3,64 * 64 * 16,object_dim)
         self.object_feature_marker = nn.Linear(inchannel,object_dim)
@@ -218,10 +218,9 @@ class FeatureDecoder(nn.Module):
         img = .5 + 0.5 * torch.tanh(img + self.bias)
         logitmask = self.conv5_mask(x)
         
-        x = self.conv_features(x)
+        #x = self.conv_features(x)
         conv_features = x.flatten(start_dim=1)
-        
-        object_scores = torch.sigmoid(self.object_score_marker(conv_features)) 
+        object_scores = torch.sigmoid(0.00001 * self.object_score_marker(conv_features)) 
 
         return img, logitmask, object_features,object_scores
 
@@ -381,7 +380,7 @@ class FeatureDecoder64(nn.Module):
         img = .5 + 0.5 * torch.tanh(img + self.bias)
         logitmask = self.conv5_mask(x)
 
-
+        x = self.conv_features(x)
         conv_features = x.flatten(start_dim=1)
         
         object_scores = torch.sigmoid( self.object_score_marker(conv_features)) 

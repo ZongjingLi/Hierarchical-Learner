@@ -51,7 +51,7 @@ if __name__ == "__main__":
     from datasets  import *
     from visualize import *
     hal_model = torch.load("checkpoints/joint_toy_slot_attention.ckpt", map_location = "cpu")
-    hal_model.scene_perception = torch.load("checkpoints/toy_slot_attention.ckpt", map_location = "cpu")
+    hal_model.scene_perception = torch.load("checkpoints/Boomsday_toy_slot_attention.ckpt", map_location = "cpu")
     data = ToyDataWithQuestions("train")
     maps = [12, 33, 15, 25]
 
@@ -84,3 +84,6 @@ if __name__ == "__main__":
     
     plt.show()
     """
+
+    full_model = torch.load("checkpoints/full_toy_slot_attention.ckpt",map_location = "cpu")
+    torch.save(full_model,"checkpoints/Boomsday_toy_slot_attention.ckpt")
