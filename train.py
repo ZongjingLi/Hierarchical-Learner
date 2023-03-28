@@ -92,7 +92,7 @@ def train(model,dataset,config,name):
                         scores   = outputs["object_scores"][b,...,0] - EPS
                         features = outputs["object_features"][b]
 
-                        edge = 1e-4
+                        edge = 1e-6
                         features = torch.cat([features,edge * torch.ones(features.shape)],-1)
 
                         kwargs = {"features":features,
@@ -107,9 +107,10 @@ def train(model,dataset,config,name):
                             query_loss += F.mse_loss(int_num + 1,o["end"])
                         if answer in yes_or_no:
                             if answer == "yes":query_loss -= F.logsigmoid(o["end"])
-                            else:query_loss -= F.logsigmoid(1 - o["end"])
+                            else:query_loss -= torch.log(1 - torch.sigmoid(o["end"]))
+                        print(scores[3])
 
-                working_loss += query_loss * 0.1
+                working_loss += query_loss * 0.03
 
              # calculate the working loss of the batch
 

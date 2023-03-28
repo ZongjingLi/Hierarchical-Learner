@@ -171,6 +171,7 @@ class FeatureDecoder(nn.Module):
         self.conv4 = nn.Conv2d(32, 32, 3, bias=False)
         # self.bn4 = nn.BatchNorm2d(32)
         self.celu = nn.CELU()
+        self.celu = nn.Sigmoid()
         self.inchannel = inchannel
         self.conv5_img = nn.Conv2d(32, input_channel, 1)
         self.conv5_mask = nn.Conv2d(32, 1, 1)
@@ -183,7 +184,7 @@ class FeatureDecoder(nn.Module):
         self.register_buffer('y_grid', y_grid.view((1, 1) + y_grid.shape))
         self.bias = 0
 
-        self.object_score_marker   = nn.Linear(128 * 128 * 32,1)
+        self.object_score_marker  =  nn.Linear(128 * 128 * 32,1)
         #self.object_score_marker   = FCBlock(256,2,64 * 64 * 16,1)
         #self.object_feature_marker = FCBlock(256,3,64 * 64 * 16,object_dim)
         self.object_feature_marker = nn.Linear(inchannel,object_dim)
@@ -205,22 +206,24 @@ class FeatureDecoder(nn.Module):
         x = torch.cat((self.x_grid.expand(bs, -1, -1, -1),
                        self.y_grid.expand(bs, -1, -1, -1), z), dim=1)
         # x (bs, 32, image_h, image_w)
-        x = self.conv1(x);x = self.celu(x)
+        x = self.conv1(x);x = self.celu(x) * 0.1
         # x = self.bn1(x)
-        x = self.conv2(x);x = self.celu(x)
+        x = self.conv2(x);x = self.celu(x) * 0.1#self.celu(x)
         # x = self.bn2(x)
-        x = self.conv3(x);x = self.celu(x)
+        x = self.conv3(x);x = self.celu(x) * 0.1
         # x = self.bn3(x)
-        x = self.conv4(x);x = self.celu(x)
-        # x = self.bn4(x)
+        x = self.conv4(x);x = self.celu(x) * 0.1
+        #x = self.bn4(x)
 
         img = self.conv5_img(x)
         img = .5 + 0.5 * torch.tanh(img + self.bias)
         logitmask = self.conv5_mask(x)
         
         #x = self.conv_features(x)
+        #python3 train.py --name="KFT" --training_mode="joint" --pretrain_joint="checkpoints/Boomsday_toy_slot_attention.ckpt" --"save_path"="checkpoints/Boomsday_toy_slot_attention.ckpt"
         conv_features = x.flatten(start_dim=1)
-        object_scores = torch.sigmoid(0.00001 * self.object_score_marker(conv_features)) 
+        #object_scores = torch.sigmoid(0.000015 * self.object_score_marker(conv_features)) 
+        object_scores = torch.sigmoid(0.0015 * self.object_score_marker(conv_features)) 
 
         return img, logitmask, object_features,object_scores
 

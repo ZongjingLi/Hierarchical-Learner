@@ -10,7 +10,7 @@ class FCLayer(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(in_features, out_features),
             nn.LayerNorm([out_features]),
-            nn.ReLU()
+            nn.CELU(),
         )
 
     def forward(self, input):

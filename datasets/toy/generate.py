@@ -83,7 +83,7 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
         screen.blit(background_image, [0, 0])
         scene = []
 
-        for _ in range(np.random.choice([1,2,3])):
+        for _ in range(np.random.choice([0,1,2,3])):
             scale = np.random.randint(resolution[0]/12,resolution[0] / 9)
             # choose the color to draw
             color = random_color()
@@ -197,4 +197,4 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
     
 
 if __name__ == "__main__":
-    generate_toy_dataset(500, [256,256], True)
+    generate_toy_dataset(1500, [256,256], True)
