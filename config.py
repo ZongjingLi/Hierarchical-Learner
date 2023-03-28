@@ -32,7 +32,7 @@ parser.add_argument("--slot_itrs",          default = 3)
 # hiearchical concept model setup
 parser.add_argument("--concept_type",       default = "box")
 parser.add_argument("--concept_dim",        default = 100)
-parser.add_argument("--temperature",        default = 0.2)
+parser.add_argument("--temperature",        default = 5)
 
 # box concept setup
 parser.add_argument("--method",             default = "uniform")

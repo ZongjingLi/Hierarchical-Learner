@@ -206,13 +206,13 @@ class FeatureDecoder(nn.Module):
         x = torch.cat((self.x_grid.expand(bs, -1, -1, -1),
                        self.y_grid.expand(bs, -1, -1, -1), z), dim=1)
         # x (bs, 32, image_h, image_w)
-        x = self.conv1(x);x = self.celu(x) * 0.1
+        x = self.conv1(x);x = self.celu(x) * 0.5
         # x = self.bn1(x)
-        x = self.conv2(x);x = self.celu(x) * 0.1#self.celu(x)
+        x = self.conv2(x);x = self.celu(x) * 0.5#self.celu(x)
         # x = self.bn2(x)
-        x = self.conv3(x);x = self.celu(x) * 0.1
+        x = self.conv3(x);x = self.celu(x) * 0.5
         # x = self.bn3(x)
-        x = self.conv4(x);x = self.celu(x) * 0.1
+        x = self.conv4(x);x = self.celu(x) * 0.5
         #x = self.bn4(x)
 
         img = self.conv5_img(x)
