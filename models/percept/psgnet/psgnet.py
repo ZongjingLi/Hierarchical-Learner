@@ -21,6 +21,8 @@ from torch_scatter import scatter_mean,scatter_max
 
 from .functional import *
 
+device = "cpu"
+
 def build_perception(size,length,device):
     edges = [[],[]]
     for i in range(size):
