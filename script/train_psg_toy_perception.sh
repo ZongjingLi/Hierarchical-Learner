@@ -1,0 +1,1 @@
+python3 train.py --name="WLK" --training_mode="perception"

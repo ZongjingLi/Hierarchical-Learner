@@ -160,6 +160,8 @@ def train(model,dataset,config,name):
         total_loss = total_loss/len(dataloader)
         writer.add_scalar("epoch_loss",total_loss,epoch)
 
+
+
 from config import *
 
 # [Experiment Config]
