@@ -65,3 +65,20 @@ class HierarchicalLearner(nn.Module):
 
         outputs = {**part_centric_output}
         return outputs
+
+class SceneGraphLearner(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+
+        # [Unsupervised Part-Centric Representation]
+        if config.perception == "psgnet":
+            self.scene_perception = 0
+        else:
+            raise UnknownArgument
+
+        # [Concept Structure Embedding]
+        self.box_registry = build_box_registry(config)
+
+        # [Neuro Symbolic Executor]
+        self.executor = HalProgramExecutor(config)
