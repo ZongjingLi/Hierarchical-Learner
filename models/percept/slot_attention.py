@@ -207,12 +207,16 @@ class FeatureDecoder(nn.Module):
                        self.y_grid.expand(bs, -1, -1, -1), z), dim=1)
         # x (bs, 32, image_h, image_w)
         x = self.conv1(x);x = self.celu(x) * 0.5
+        x = torch.clamp(x, min = -100, max = 100)
         # x = self.bn1(x)
         x = self.conv2(x);x = self.celu(x) * 0.5#self.celu(x)
+        x = torch.clamp(x, min = -100, max = 100)
         # x = self.bn2(x)
         x = self.conv3(x);x = self.celu(x) * 0.5
+        x = torch.clamp(x, min = -100, max = 100)
         # x = self.bn3(x)
         x = self.conv4(x);x = self.celu(x) * 0.5
+        x = torch.clamp(x, min = -100, max = 100)
         #x = self.bn4(x)
 
         img = self.conv5_img(x)
@@ -221,9 +225,10 @@ class FeatureDecoder(nn.Module):
         
         #x = self.conv_features(x)
         #python3 train.py --name="KFT" --training_mode="joint" --pretrain_joint="checkpoints/Boomsday_toy_slot_attention.ckpt" --"save_path"="checkpoints/Boomsday_toy_slot_attention.ckpt"
-        conv_features = x.flatten(start_dim=1)
+        conv_features = torch.clamp(x.flatten(start_dim=1),min = -10, max = 10)
         #object_scores = torch.sigmoid(0.000015 * self.object_score_marker(conv_features)) 
-        object_scores = torch.sigmoid(0.0015 * self.object_score_marker(conv_features)) 
+        score = torch.clamp( 0.001 * self.object_score_marker(conv_features), min = -10, max = 10)
+        object_scores = torch.sigmoid(score) 
 
         return img, logitmask, object_features,object_scores
 

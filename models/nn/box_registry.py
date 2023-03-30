@@ -46,6 +46,79 @@ class BoxRegistry(nn.Module):
     @property
     def size(self):return self.dim ** 2
 
-registry_map = {"box": BoxRegistry}
+
+class PlaneRegistry(nn.Module):
+
+    def __init__(self, config):
+        super().__init__()
+        self.dim = config.concept_dim
+        self.planes = nn.Embedding(config.entries, self.dim)
+        with torch.no_grad():
+            self.planes.weight.abs_()
+
+    def forward(self, x):
+        return self.planes(x)
+
+    def __setitem__(self, key, item):
+        self.planes.weight[key] = item
+
+    def __getitem__(self, key):
+        return self.planes.weight[key]
+
+    def clamp_dimensions(self):
+        with torch.no_grad():
+            self.planes.weight.clamp(0, 1)
+        pass
+
+    @property
+    def device(self):
+        return self.planes.weight.device
+
+    def __len__(self):
+        return len(self.planes.weight)
+
+    @property
+    def size(self):
+        return self.dim
+
+
+class ConeRegistry(nn.Module):
+
+    def __init__(self, config):
+        super().__init__()
+        self.dim = config.concept_dim
+        self.cones = self._init_embedding_(config.entries)
+
+    def _init_embedding_(self, entries):
+        weight = torch.Tensor(entries, self.dim).normal_().abs_()
+        return nn.Embedding(entries, self.dim, _weight=weight)
+
+    def forward(self, x):
+        return self.cones(x)
+
+    def __setitem__(self, key, item):
+        self.cones.weight[key] = item
+
+    def __getitem__(self, key):
+        return self.cones.weight[key]
+
+    def clamp_dimensions(self):
+        with torch.no_grad():
+            self.cones.weight /= self.cones.weight.norm(dim=-1, keepdim=True)
+        pass
+
+    @property
+    def device(self):
+        return self.cones.weight.device
+
+    def __len__(self):
+        return len(self.cones.weight)
+
+    @property
+    def size(self):
+        return self.dim
+
+
+registry_map = {"box": BoxRegistry, "cone": ConeRegistry, "plane": PlaneRegistry, }
 
 def build_box_registry(config):return registry_map[config.concept_type](config)

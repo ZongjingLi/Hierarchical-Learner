@@ -93,7 +93,8 @@ def train(model,dataset,config,name):
                         features = outputs["object_features"][b]
 
                         edge = 1e-6
-                        features = torch.cat([features,edge * torch.ones(features.shape)],-1)
+                        if config.concept_type == "box":
+                            features = torch.cat([features,edge * torch.ones(features.shape)],-1)
 
                         kwargs = {"features":features,
                                   "end":scores }
@@ -103,14 +104,14 @@ def train(model,dataset,config,name):
                         o = model.executor(q, **kwargs)
                         #print("Batch:{}".format(b),q,o["end"],answer)
                         if answer in numbers:
-                            int_num = torch.tensor(numbers.index(answer)).float()
+                            int_num = torch.tensor(numbers.index(answer)).float().to(config.device)
                             query_loss += F.mse_loss(int_num + 1,o["end"])
                         if answer in yes_or_no:
                             if answer == "yes":query_loss -= F.logsigmoid(o["end"])
                             else:query_loss -= torch.log(1 - torch.sigmoid(o["end"]))
-                        print(scores[3])
+                        #print(scores.float().detach().numpy())
 
-                working_loss += query_loss * 0.03
+                working_loss += query_loss * 0.003
 
              # calculate the working loss of the batch
 
@@ -153,7 +154,7 @@ def train(model,dataset,config,name):
                     writer.add_image("Backup",gt_grid.cpu().detach().numpy(),itrs)    
 
                     visualize_outputs(inputs,outputs)
-                    visualize_scores(outputs["object_scores"][:,:,0].detach().numpy())   
+                    visualize_scores(outputs["object_scores"][:,:,0].cpu().detach().numpy())   
 
             itrs += 1
         total_loss = total_loss/len(dataloader)
@@ -206,5 +207,6 @@ if experiment_config.training_mode == "joint":
     train_model.scene_perception.allow_obj_score()
 
     # Put the model on the device
+    train_model = torch.load("checkpoints/KFT_joint_toy_slot_attention.ckpt", map_location = config.device)
     train_model = train_model.to(config.device)
     train(train_model,train_dataset,config, experiment_config.name)
