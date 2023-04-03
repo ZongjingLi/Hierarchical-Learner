@@ -94,7 +94,7 @@ def train(model,dataset,config,name):
 
                         edge = 1e-6
                         if config.concept_type == "box":
-                            features = torch.cat([features,edge * torch.ones(features.shape)],-1)
+                            features = torch.cat([features,edge * torch.ones(features.shape, device = config.device)],-1)
 
                         kwargs = {"features":features,
                                   "end":scores }

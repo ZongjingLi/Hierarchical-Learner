@@ -187,14 +187,14 @@ class FeatureDecoder(nn.Module):
         self.object_score_marker  =  nn.Linear(128 * 128 * 32,1)
         #self.object_score_marker   = FCBlock(256,2,64 * 64 * 16,1)
         #self.object_feature_marker = FCBlock(256,3,64 * 64 * 16,object_dim)
-        self.object_feature_marker = nn.Linear(inchannel,object_dim)
+        self.object_feature_marker = nn.Linear(128 * 128 * 32,object_dim)
         self.conv_features         = nn.Conv2d(32,16,3,2,1)
 
 
     def forward(self, z):
         # z (bs, 32)
         bs,_ = z.shape
-        object_features = self.object_feature_marker(z)
+       
         z = z.view(z.shape + (1, 1))
 
         # Tile across to match image size
@@ -206,16 +206,16 @@ class FeatureDecoder(nn.Module):
         x = torch.cat((self.x_grid.expand(bs, -1, -1, -1),
                        self.y_grid.expand(bs, -1, -1, -1), z), dim=1)
         # x (bs, 32, image_h, image_w)
-        x = self.conv1(x);x = self.celu(x) * 0.5
+        x = self.conv1(x);x = self.celu(x) * 1.0
         x = torch.clamp(x, min = -100, max = 100)
         # x = self.bn1(x)
-        x = self.conv2(x);x = self.celu(x) * 0.5#self.celu(x)
+        x = self.conv2(x);x = self.celu(x) * 1.0#self.celu(x)
         x = torch.clamp(x, min = -100, max = 100)
         # x = self.bn2(x)
-        x = self.conv3(x);x = self.celu(x) * 0.5
+        x = self.conv3(x);x = self.celu(x) * 1.0
         x = torch.clamp(x, min = -100, max = 100)
         # x = self.bn3(x)
-        x = self.conv4(x);x = self.celu(x) * 0.5
+        x = self.conv4(x);x = self.celu(x) * 1.0
         x = torch.clamp(x, min = -100, max = 100)
         #x = self.bn4(x)
 
@@ -229,6 +229,7 @@ class FeatureDecoder(nn.Module):
         #object_scores = torch.sigmoid(0.000015 * self.object_score_marker(conv_features)) 
         score = torch.clamp( 0.001 * self.object_score_marker(conv_features), min = -10, max = 10)
         object_scores = torch.sigmoid(score) 
+        object_features = self.object_feature_marker(conv_features)
 
         return img, logitmask, object_features,object_scores
 
@@ -356,14 +357,14 @@ class FeatureDecoder64(nn.Module):
         self.object_score_marker   = nn.Linear(64 * 64 * 32,1)
         #self.object_score_marker   = FCBlock(256,2,64 * 64 * 16,1)
         #self.object_feature_marker = FCBlock(256,3,64 * 64 * 16,object_dim)
-        self.object_feature_marker = nn.Linear(inchannel,object_dim)
+        self.object_feature_marker = nn.Linear(64 * 64 * 32, object_dim)
         self.conv_features         = nn.Conv2d(32,16,3,2,1)
 
 
     def forward(self, z):
         # z (bs, 32)
         bs,_ = z.shape
-        object_features = self.object_feature_marker(z)
+        
         z = z.view(z.shape + (1, 1))
 
         # Tile across to match image size
@@ -392,6 +393,7 @@ class FeatureDecoder64(nn.Module):
         conv_features = x.flatten(start_dim=1)
         
         object_scores = torch.sigmoid( self.object_score_marker(conv_features)) 
+        object_features = self.object_feature_marker(conv_features)
 
         return img, logitmask, object_features,object_scores
 
