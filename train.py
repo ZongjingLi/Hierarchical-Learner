@@ -209,7 +209,7 @@ if experiment_config.training_mode == "joint":
     train_model.scene_perception.allow_obj_score()
 
     # Put the model on the device
-    train_model = torch.load("checkpoints/KFT.ckpt", map_location = config.device)
+    train_model = torch.load("checkpoints/kft.ckpt", map_location = config.device)
     train_model = train_model.to(config.device)
     train_model.executor.config = config
     train(train_model,train_dataset,config, experiment_config.name)
