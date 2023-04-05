@@ -45,6 +45,7 @@ class PTRImageData(Dataset):
         assert split in ["train","test","val"]
         self.split = split
         self.root_dir = "/Users/melkor/Documents/datasets/ptr_data/PTR"
+        self.root_dir = ""
         self.img_transform = transforms.Compose(
             [transforms.ToTensor()]
         )
@@ -69,7 +70,7 @@ class PTRImageData(Dataset):
         image = image.convert("RGB").resize(self.resolution) 
         image = self.img_transform(image).permute([1,2,0]) 
         #return torch.tensor(np.array(image)).float()/256
-        return {"image":image * 255.0}#"question":question,"answer":answer,"program":program}
+        return {"image":image}#"question":question,"answer":answer,"program":program}
 
     def __len__(self):
-        return 500 #len(self.ptr_data)
+        return len(self.ptr_data)
