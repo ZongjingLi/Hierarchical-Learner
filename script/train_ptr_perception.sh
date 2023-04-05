@@ -1,0 +1,1 @@
+python3 train.py --name="PTRObjects" --training_mode="perception" 
