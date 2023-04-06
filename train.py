@@ -18,6 +18,7 @@ import torchvision
 
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from datasets.ptr.ptr_datasets import PTRImageData
 from datasets.sprites.sprite_dataset import SpriteWithQuestions
 from models.hal.model import HierarchicalLearner
 from models.percept.slot_attention import SlotAttentionParser, SlotAttentionParser64
@@ -25,6 +26,9 @@ from datasets import *
 from visualize.answer_distribution import visualize_outputs,visualize_scores
 
 def train(model,dataset,config,name):
+
+    if config.domain == "ptr":
+        dataset = PTRImageData("train")
 
     if config.training_mode == "joint":
         try:model.perception.allow_obj_score()

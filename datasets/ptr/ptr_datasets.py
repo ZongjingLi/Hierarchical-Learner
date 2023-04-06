@@ -39,7 +39,7 @@ class PTRData(Dataset):
         return 500 #len(self.ptr_data)
 
 
-class PTRImageData(Dataset):
+class PTRImageDataColab(Dataset):
     def __init__(self,split="train",resolution = (128,128)):
         super().__init__()
         assert split in ["train","test","val"]
@@ -51,7 +51,7 @@ class PTRImageData(Dataset):
         )
 
         self.resolution = resolution
-        self.file_names = self.root_dir + os.listdir("/train_{}/{}_images/".format(split,split))
+        self.file_names = os.listdir("/content/{}_images/{}_images/".format(split,split))
 
         if split == "train": # 518110
             pass
@@ -73,4 +73,36 @@ class PTRImageData(Dataset):
         return {"image":image}#"question":question,"answer":answer,"program":program}
 
     def __len__(self):
-        return len(self.ptr_data)
+        return len(self.file_names)
+
+
+class PTRImageData(Dataset):
+    def __init__(self,split="train",resolution = (128,128)):
+        super().__init__()
+        assert split in ["train","test","val"]
+        self.split = split
+        self.root_dir = "/Users/melkor/Documents/datasets/ptr_data/PTR"
+      
+        self.img_transform = transforms.Compose(
+            [transforms.ToTensor()]
+        )
+
+        self.resolution = resolution
+        self.file_names = os.listdir(self.root_dir + "/{}/{}_images/".format(split,split))
+
+        if split == "train": # 518110
+            pass
+            #self.ptr_data = load_json("/Users/melkor/Documents/datasets/ptr_data/PTR/train_questions.json")["questions"]
+        elif split == "val":
+            pass
+            #self.ptr_data = load_json("/Users/melkor/Documents/datasets/ptr_data/PTR/val_questions.json")["questions"]
+    def __getitem__(self,index): # 91720
+        image_file_name = os.path.join(self.root_dir,"{}".format(self.split),"{}_images".format(self.split),self.file_names[index])
+
+        image = Image.open(image_file_name).convert()
+        image = image.convert("RGB").resize(self.resolution) 
+        image = self.img_transform(image).permute([1,2,0]) 
+
+        return {"image":image}
+    def __len__(self):
+        return len(self.file_names)

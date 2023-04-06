@@ -1,1 +1,1 @@
-python3 train.py --name="PTRObjects" --training_mode="perception" 
+python3 train.py --name="PTRObjects" --training_mode="perception" --pretrain_perception="checkpoints/PTRObjects_PTR_slot_attention.ckpt"
