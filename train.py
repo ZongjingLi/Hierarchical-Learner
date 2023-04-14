@@ -206,7 +206,8 @@ if experiment_config.training_mode == "joint":
     train_model = HierarchicalLearner(config)
 
     if experiment_config.pretrain_joint:
-        train_model.scene_perception = torch.load(experiment_config.pretrain_joint,map_location = config.device)
+        pass
+        #train_model.scene_perception = torch.load(experiment_config.pretrain_joint,map_location = config.device)
 
     # [Setup model device and more on objectness]
     train_model.executor.config = config

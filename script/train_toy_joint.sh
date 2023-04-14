@@ -1,1 +1,1 @@
-/Users/melkor/miniforge3/envs/Melkor/bin/python train.py --name="KFT" --training_mode="joint" --pretrain_joint="checkpoints/KFT_toy_slot_attention.ckpt" --"save_path"="checkpoints/Boomsday_toy_slot_attention.ckpt"
+/Users/melkor/miniforge3/envs/Melkor/bin/python train.py --name="KFT" --training_mode="joint" --pretrain_joint="checkpoints/KFT_joint_toy_slot_attention.ckpt" 
