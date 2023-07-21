@@ -1,6 +1,9 @@
-from .nn       import *
-from .programs import *
-from .percept  import *
-from .parser   import *
-from .hal      import *
-from .dynamic  import *
+from .nn            import *
+from .parser        import *
+from .percept       import *
+from .programs      import *
+from .scenelearner  import *
+from .physics        import *
+from .planning      import *
+
+from .autolearner   import *

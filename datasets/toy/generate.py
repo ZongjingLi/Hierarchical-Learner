@@ -48,7 +48,7 @@ def random_template():
 
 def random_color():
     color = [0, 10, 0]
-    color[np.random.choice([0,2])] = 200
+    color[np.random.choice([0,2])] = 220 + np.random.randint(-20,20)
     return color
 
 def random_coord(margin,resolution = (128,128)):
@@ -63,8 +63,9 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
 
     # Set up the drawing window
     screen = pygame.display.set_mode(resolution)
-    background_image = pygame.image.load("/Users/melkor/Documents/datasets/bg.webp").convert()
-
+    bg1 = pygame.image.load("/Users/melkor/Documents/datasets/bg.webp").convert()
+    bg2 = pygame.image.load("/Users/melkor/Documents/datasets/bg2.webp").convert()
+    bg1 = bg2
     # Run until the user asks to quit
     running = True
     itr = 0
@@ -80,17 +81,21 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
 
         # Fill the background with white
         screen.fill((255, 255, 255))
+        background_image = np.random.choice([bg1,bg2])
         screen.blit(background_image, [0, 0])
         scene = []
+        cats = [0,1,2]
 
         for _ in range(np.random.choice([0,1,2,3])):
+
             scale = np.random.randint(resolution[0]/12,resolution[0] / 9)
             # choose the color to draw
             color = random_color()
             px,py = random_coord(scale, resolution)
 
-            # control the portion of different kind of objects generated
-            category = np.random.choice([0,1,2], p = [0.2, 0.4, 0.4])
+            # control the portion of different kind of objects generated [0.2, 0.4, 0.4]
+            category = np.random.choice(cats,)
+            cats.remove(category)
             
             if category == 0:
                 # draw tower
@@ -197,4 +202,4 @@ def generate_toy_dataset(num, resolution = (128,128), questions = False):
     
 
 if __name__ == "__main__":
-    generate_toy_dataset(1500, [256,256], True)
+    generate_toy_dataset(3500, [256,256], True)

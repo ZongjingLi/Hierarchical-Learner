@@ -1,89 +1,66 @@
-'''
- # @ Author: Zongjing Li
- # @ Create Time: 2023-03-22 17:00:05
- # @ Modified by: Zongjing Li
- # @ Modified time: 2023-03-22 17:00:26
- # @ Description: This file is distributed under the MIT license.
-'''
+from models.percept.construct_net import *
+from datasets import *
+from config import *
 
-'''
- # @ Author: Yiqi Sun
- # @ Create Time: 2023-03-14 13:07:32
- # @ Modified by: Yiqi Sun
- # @ Modified time: 2023-03-14 13:36:14
- # @ Description: This file is distributed under the MIT license.
-'''
+# [Grid-Line Domain Diff]
+def lin2img(lin,b):return lin.reshape([b,128,128,3])
 
+test_dataset = SpriteData(split = "train")
+test_dataset = ToyData(split = "train")
+#test_dataset = AcherusDataset(split = "train")
+dataloader = torch.utils.data.DataLoader(test_dataset, batch_size = 1, shuffle = True)
 
-if __name__ == "__main__":
-    from models import *
-    from config import *
+for sample in dataloader:
+    ims = sample["image"]
+    break;
 
-    input_ims = torch.randn([10,128,128,3])
-    input_programs = ["Exist(Filter(Scene(), red))", "Count(Filter(Scene(), ship))"]
+def build_perception(size,length,device):
+    edges = [[],[]]
+    for i in range(size):
+        for j in range(size):
+            # go for all the points on the grid
+            coord = [i,j];loc = i * size + j
+            
+            for r in range(25):
+                random_long_range = torch.randint(128, (1,2) )[0]
+                edges[0].append(random_long_range[0] // size)
+                edges[1].append(random_long_range[1] % size)
+            for dx in range(-length,length+1):
+                for dy in range(-length,length+1):
+                    if i+dx < size and i+dx>=0 and j+dy<size and j+dy>=0:
+                        if 1 and (i+dx) * size + (j + dy) != loc:
+                            edges[0].append(loc)
+                            edges[1].append( (i+dx) * size + (j + dy))
+    return torch.tensor(edges).to(device)
 
-    inputs = {"images": input_ims, "programs": input_programs}
+construct_net = ConstructNet(config)
 
-    hal_model = HierarchicalLearner(config)
+outputs = construct_net(ims)
 
-    print("start the main function")
-    #p = hal_model.executor.parse("exist(filter(scene(),red))")
-    p = hal_model.parse("exist(scene())")
-    p = hal_model.parse("unique(scene())")
-    #p = hal_model.parse("exist(filter(scene(),red))")
-    p = hal_model.executor.parse("filter(scene(),boat)")
-    print(p)
+abstract_scene = outputs["abstract_scene"][-1]
+level_masks = abstract_scene["masks"]
 
-    kwargs = {"features":torch.randn([8,200]),"end":torch.ones([8])}
+print(level_masks.shape)
+base_mask = level_masks.detach()
+print(base_mask.max())
 
-    o = hal_model.executor(p,**kwargs)
+b = 0
+for i in range(base_mask.shape[1]):
+    plt.subplot(1, 2, 1);plt.tick_params(left = False, right = False , labelleft = False ,
+                labelbottom = False, bottom = False);
+    plt.imshow(base_mask[b,i], cmap="bone")
+    plt.subplot(1, 2, 2);plt.tick_params(left = False, right = False , labelleft = False ,
+                labelbottom = False, bottom = False);
 
-    print(o["end"])
+    plt.imshow(base_mask[b,i].unsqueeze(-1) * ims[0])
+    #bx = base_locs[i] / 128
+    #by = base_locs[i] % 128
+    #plt.scatter(bx,by)
+    plt.pause(0.5)
+plt.show()
 
-    optim = torch.optim.Adam(hal_model.parameters() , lr = 2e-2)
-    for epoch in range(4000):
-        o = hal_model.executor(p,**kwargs)
-        loss = 0 - o["end"][0]  - o["end"][-4] 
-        optim.zero_grad()
-        loss.backward()
-        optim.step()
-
-    from datasets  import *
-    from visualize import *
-    hal_model = torch.load("checkpoints/joint_toy_slot_attention.ckpt", map_location = "cpu")
-    hal_model.scene_perception = torch.load("checkpoints/Boomsday_toy_slot_attention.ckpt", map_location = "cpu")
-    data = ToyDataWithQuestions("train")
-    maps = [12, 33, 15, 25]
-
-    ims = torch.cat([data[idx]["image"].unsqueeze(0) for idx in maps],0)
-    outputs = hal_model.scene_perception(ims)
-    visualize_outputs(ims,outputs)
-    visualize_scores(outputs["object_scores"][:,:,0].detach().numpy())
-    
-    """
-    inputs = {"image":ims,
-            "question":[
-                {
-                    "program":[
-                        "exist(filter(scene(),house))",
-                        "exist(filter(scene(),house))",
-                        "exist(filter(scene(),house))",
-                        "exist(filter(scene(),house))"
-                        ],
-                    "answer":[0,1,2,3]
-                }
-                ]}
-
-    model = torch.load("checkpoints/joint_toy_slot_attention.ckpt",map_location=config.device)
-    outputs = model(inputs)
-    visualize_outputs(inputs,outputs)
-    
-    #visualize_distribution(torch.sigmoid(o["end"]).detach().numpy())
-    #print(outputs["object_scores"].shape)
-    #visualize_distribution(outputs["object_scores"][0][...,0].detach().numpy())
-    
-    plt.show()
-    """
-
-    full_model = torch.load("checkpoints/full_toy_slot_attention.ckpt",map_location = "cpu")
-    torch.save(full_model,"checkpoints/Boomsday_toy_slot_attention.ckpt")
+B = 1
+for b in range(B):
+    plt.subplot(1, B, b + 1);plt.tick_params(left = False, right = False , labelleft = False ,
+                labelbottom = False, bottom = False); plt.imshow(ims[b,:,:,:])
+plt.show()

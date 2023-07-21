@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 
+import torch
+import torch.nn as nn
+
 class FeatureMapEncoder(nn.Module):
     def __init__(self,input_nc=3,z_dim=64,bottom=False):
         super().__init__()
@@ -162,19 +165,19 @@ class FeatureDecoder(nn.Module):
     def __init__(self, inchannel,input_channel,object_dim = 100):
         super(FeatureDecoder, self).__init__()
         self.im_size = 128
-        self.conv1 = nn.Conv2d(inchannel + 2, 32, 3, bias=False)
+        self.conv1 = nn.Conv2d(inchannel + 2, 64, 3, bias=False)
         # self.bn1 = nn.BatchNorm2d(32)
-        self.conv2 = nn.Conv2d(32, 32, 3, bias=False)
+        self.conv2 = nn.Conv2d(64, 128, 3, bias=False)
         # self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(32, 32, 3, bias=False)
+        self.conv3 = nn.Conv2d(128, 128, 3, bias=False)
         # self.bn3 = nn.BatchNorm2d(32)
-        self.conv4 = nn.Conv2d(32, 32, 3, bias=False)
+        self.conv4 = nn.Conv2d(128, 64, 3, bias=False)
         # self.bn4 = nn.BatchNorm2d(32)
         self.celu = nn.CELU()
         self.celu = nn.Sigmoid()
         self.inchannel = inchannel
-        self.conv5_img = nn.Conv2d(32, input_channel, 1)
-        self.conv5_mask = nn.Conv2d(32, 1, 1)
+        self.conv5_img = nn.Conv2d(64, input_channel, 1)
+        self.conv5_mask = nn.Conv2d(64, 1, 1)
 
         x = torch.linspace(-1, 1, self.im_size + 8)
         y = torch.linspace(-1, 1, self.im_size + 8)
@@ -184,17 +187,17 @@ class FeatureDecoder(nn.Module):
         self.register_buffer('y_grid', y_grid.view((1, 1) + y_grid.shape))
         self.bias = 0
 
-        self.object_score_marker  =  nn.Linear(128 * 128 * 32,1)
+        self.object_score_marker  =  nn.Linear(128 * 128 * 64,1)
         #self.object_score_marker   = FCBlock(256,2,64 * 64 * 16,1)
         #self.object_feature_marker = FCBlock(256,3,64 * 64 * 16,object_dim)
-        self.object_feature_marker = nn.Linear(128 * 128 * 32,object_dim)
+        self.object_feature_marker = nn.Linear(128 * 128 * 64,object_dim)
         self.conv_features         = nn.Conv2d(32,16,3,2,1)
 
 
     def forward(self, z):
         # z (bs, 32)
         bs,_ = z.shape
-       
+
         z = z.view(z.shape + (1, 1))
 
         # Tile across to match image size
@@ -206,17 +209,18 @@ class FeatureDecoder(nn.Module):
         x = torch.cat((self.x_grid.expand(bs, -1, -1, -1),
                        self.y_grid.expand(bs, -1, -1, -1), z), dim=1)
         # x (bs, 32, image_h, image_w)
+
         x = self.conv1(x);x = self.celu(x) * 1.0
-        x = torch.clamp(x, min = -100, max = 100)
+        x = torch.clamp(x, min = -32000, max = 32000)
         # x = self.bn1(x)
         x = self.conv2(x);x = self.celu(x) * 1.0#self.celu(x)
-        x = torch.clamp(x, min = -100, max = 100)
+        x = torch.clamp(x, min = -32000, max = 32000)
         # x = self.bn2(x)
         x = self.conv3(x);x = self.celu(x) * 1.0
-        x = torch.clamp(x, min = -100, max = 100)
+        x = torch.clamp(x, min = -32000, max = 32000)
         # x = self.bn3(x)
         x = self.conv4(x);x = self.celu(x) * 1.0
-        x = torch.clamp(x, min = -100, max = 100)
+        x = torch.clamp(x, min = -32000, max = 32000)
         #x = self.bn4(x)
 
         img = self.conv5_img(x)
@@ -252,7 +256,7 @@ class FeatureDecoder(nn.Module):
             param.requires_grad = True
         for param in self.conv_features.parameters():
             param.requires_grad = True
-          
+        
 class SlotAttentionParser(nn.Module):
     def __init__(self,num_slots,object_dim,num_iters):
         """
@@ -268,10 +272,12 @@ class SlotAttentionParser(nn.Module):
         self.num_slots = num_slots # the number of objects and backgrounds in the scene
         self.object_dim = object_dim # the dimension of object level after the projection
 
-        self.encoder_net = FeatureMapEncoder(input_nc = 3,z_dim = 72)
-        self.slot_attention = SlotAttention(num_slots,72,72,num_iters)
-        self.decoder_net = FeatureDecoder(72,3,object_dim)
+        self.encoder_net = FeatureMapEncoder(input_nc = 3,z_dim = 256)
+        self.slot_attention = SlotAttention(num_slots,256,256,num_iters)
+        self.decoder_net = FeatureDecoder(256,3,object_dim)
         self.use_obj_score = False
+
+        
 
     def allow_obj_score(self):self.use_obj_score = True
 
@@ -306,9 +312,9 @@ class SlotAttentionParser(nn.Module):
         # slot attention: generate slot proposals based on the feature net
         slots,attn  = self.slot_attention(feature_inp) 
         # slots: [b,K,C] attn: [b,N,C]
-
+  
         # decoder model: make reconstructions and masks based on the 
-        img, logitmasks, object_features, object_scores= self.decoder_net(slots.view([-1,72]))
+        img, logitmasks, object_features, object_scores= self.decoder_net(slots.view([-1,256]))
         
         object_features = object_features.view([b,self.num_slots,-1])
         object_scores   = object_scores.view([b,self.num_slots,1])
@@ -322,12 +328,34 @@ class SlotAttentionParser(nn.Module):
         else:
             recons = torch.sum( img * masks,1)
         loss = torch.mean((recons-image) ** 2) # the mse loss of the reconstruction
-        return {"full_recons":recons.permute([0,2,3,1]),
+        scene =  [{"scores":object_scores,"features":object_features,"masks":masks.permute([0,1,3,4,2]),"match":False,"recons":img.permute([0,1,3,4,2])}]
+        outputs = {"abstract_scene":scene,
+                "full_recons":recons.permute([0,2,3,1]),
                 "masks":masks.permute([0,1,3,4,2]),
                 "recons":img.permute([0,1,3,4,2]),
                 "loss":loss,
                 "object_features":object_features,
                 "object_scores":object_scores}
+        
+
+        return outputs
+        
+
+class SlotAttentionRecursiveParser(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.scene_parsers = nn.ModuleList([
+            SlotAttentionParser(config)
+        ])
+        self.effective_level = 1
+    
+    def forward(self,x):
+        abstract_scene = []
+        for parser in self.scene_parsers:
+            outputs = parser(x)
+            abstract_scene.append({})
+        return abstract_scene
+
 
 class FeatureDecoder64(nn.Module):
     def __init__(self, inchannel,input_channel,object_dim = 100):
@@ -357,14 +385,14 @@ class FeatureDecoder64(nn.Module):
         self.object_score_marker   = nn.Linear(64 * 64 * 32,1)
         #self.object_score_marker   = FCBlock(256,2,64 * 64 * 16,1)
         #self.object_feature_marker = FCBlock(256,3,64 * 64 * 16,object_dim)
-        self.object_feature_marker = nn.Linear(64 * 64 * 32, object_dim)
+        self.object_feature_marker = nn.Linear(inchannel,object_dim)
         self.conv_features         = nn.Conv2d(32,16,3,2,1)
 
 
     def forward(self, z):
         # z (bs, 32)
         bs,_ = z.shape
-        
+        object_features = self.object_feature_marker(z)
         z = z.view(z.shape + (1, 1))
 
         # Tile across to match image size
@@ -393,7 +421,6 @@ class FeatureDecoder64(nn.Module):
         conv_features = x.flatten(start_dim=1)
         
         object_scores = torch.sigmoid( self.object_score_marker(conv_features)) 
-        object_features = self.object_feature_marker(conv_features)
 
         return img, logitmask, object_features,object_scores
 

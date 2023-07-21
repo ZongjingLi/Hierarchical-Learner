@@ -1,1 +1,0 @@
-python3 train.py --name="Boomsday" --training_mode="perception" --pretrain_perception="checkpoints/Boomsday_toy_slot_attention.ckpt"

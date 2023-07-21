@@ -13,6 +13,9 @@ from torchvision import transforms
 from PIL import Image
 from utils import *
 
+
+root = "/Users/melkor/Documents/datasets/"
+
 class ToyData(Dataset):
     def __init__(self,split = "train",resolution = (128,128)):
         super().__init__()
@@ -20,7 +23,7 @@ class ToyData(Dataset):
         assert split in ["train","val","test"]
         self.split = split
         self.resolution = resolution
-        self.root_dir = "/Users/melkor/Documents/datasets/toy/images"
+        self.root_dir = root + "toy/images"
 
         self.img_transform = transforms.Compose(
             [transforms.ToTensor()]
@@ -41,13 +44,13 @@ class ToyDataWithQuestions(nn.Module):
         assert split in ["train","val","test"]
         self.split = split
         self.resolution = resolution
-        self.root_dir = "/Users/melkor/Documents/datasets/toy/"
+        self.root_dir = root + "toy/"
         self.questions = load_json(self.root_dir + "train_questions.json")
         self.img_transform = transforms.Compose(
             [transforms.ToTensor()]
         )
 
-    def __len__(self): return 1000#len(self.files)
+    def __len__(self): return 3200#len(self.files)
 
     def __getitem__(self,index):
         image = Image.open(os.path.join(self.root_dir,"images","{}.png".format( 1 + index)))
