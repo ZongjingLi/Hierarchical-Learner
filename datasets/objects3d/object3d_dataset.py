@@ -9,6 +9,7 @@ import pickle
 import json
 import os
 
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 class Objects3dDataset(Dataset):
     def __init__(self, config, sidelength, depth_aug=True, multiview_aug=True, phase='train', stage=0, vis=False, test=False):
@@ -205,7 +206,7 @@ class Objects3dDataset(Dataset):
 
             rgb_world.append(dp_np[..., -1:]/255)
 
-            dp_np = torch.sum(point_transform[None, :, :] * dp_np[:, None, :4], dim=-1)
+            dp_np = torch.sum(point_transform[None, :, :].to(device) * dp_np[:, None, :4].to(device), dim=-1)
             points_world.append(dp_np[..., :3])            
         rgb_world = torch.cat(rgb_world, dim=-1)
 
@@ -222,8 +223,8 @@ class Objects3dDataset(Dataset):
 
         # translate everything to the origin based on the point cloud mean
         center = point_cloud.mean(dim=0)
-        coord = coord - center[None, :]
-        point_cloud = point_cloud - center[None, :]
+        coord = coord.to(device) - center[None, :].to(device)
+        point_cloud = point_cloud.to(device) - center[None, :].to(device)
 
         labels = label
         
