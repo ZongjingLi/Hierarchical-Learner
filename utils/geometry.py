@@ -96,14 +96,15 @@ def lift(x, y, z, intrinsics, homogeneous=False):
     :return:
     '''
     fx, fy, cx, cy = parse_intrinsics(intrinsics)
-
+    for v in [fx,fy,cx,cy,x,y,z]:
+      v = v.to(device)
     x_lift = (x - expand_as(cx, x)) / expand_as(fx, x) * z
     y_lift = (y - expand_as(cy, y)) / expand_as(fy, y) * z
 
     if homogeneous:
-        return torch.stack((x_lift, y_lift, z, torch.ones_like(z).to(device)), dim=-1)
+        return torch.stack((x_lift.to(device), y_lift.to(device), z.to(device), torch.ones_like(z).to(device)), dim=-1)
     else:
-        return torch.stack((x_lift, y_lift, z), dim=-1)
+        return torch.stack((x_lift.to(device), y_lift.to(device), z.to(device)), dim=-1)
 
 
 def project(x, y, z, intrinsics):
@@ -117,7 +118,9 @@ def project(x, y, z, intrinsics):
     :return:
     '''
     fx, fy, cx, cy = parse_intrinsics(intrinsics)
-
+    fx, fy, cx, cy = parse_intrinsics(intrinsics)
+    for v in [fx,fy,cx,cy,x,y,z]:
+      v = v.to(device)
     x_proj = expand_as(fx, x) * x / z + expand_as(cx, x)
     y_proj = expand_as(fy, y) * y / z + expand_as(cy, y)
 
@@ -175,5 +178,3 @@ def depth_from_world(world_coords, cam2world):
     points_cam = torch.inverse(cam2world).bmm(points_hom)  # (batch, 4, num_samples)
     depth = points_cam[:, 2, :][:, :, None]  # (batch, num_samples, 1)
     return depth
-
-

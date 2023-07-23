@@ -163,7 +163,8 @@ class HierarchicalVNN(nn.Module):
         super().__init__()
         latent_dim = config.latent_dim
         perception = config.perception
-        
+        self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    
         if perception == "point_net":
             self.encoder = VNN_ResnetPointnet(c_dim=latent_dim, dim=6) # modified resnet-18
         if perception == "dgcnn":
@@ -176,6 +177,7 @@ class HierarchicalVNN(nn.Module):
         self.scaling = config.scaling
 
     def forward(self, inputs):
+        device = self.device
         enc_in = inputs['point_cloud'] * self.scaling 
         query_points = inputs['coords'] * self.scaling 
 
@@ -192,9 +194,13 @@ class HierarchicalVNN(nn.Module):
 
         #print((inputs["occ"]+1)/2)
         #print(outputs["occ"].unsqueeze(-1))
-        EPS = 1e-6
-        recon_loss_occ = torch.nn.functional.binary_cross_entropy(torch.clamp((inputs["occ"]+1)/2,min=EPS,max=1-EPS),outputs["occ"].unsqueeze(-1))
-        recon_loss_color = torch.nn.functional.mse_loss(outputs["color"],inputs["coord_color"])
+        
+        label = inputs['occ'].squeeze()
+        label = (label + 1) / 2.
+        recon_loss_occ= -1 * (label * torch.log(outputs['occ'] + 1e-5) + (1 - label) * torch.log(1 - outputs['occ'] + 1e-5)).mean()
+        #EPS = 1e-6
+        #recon_loss_occ = torch.nn.functional.binary_cross_entropy(torch.clamp((inputs["occ"].to(device)+1)/2,min=EPS,max=1-EPS).to(device),outputs["occ"].unsqueeze(-1).to(device))
+        recon_loss_color = torch.nn.functional.mse_loss(outputs["color"].to(device),inputs["coord_color"].to(device))
         outputs["loss"] = {"occ_reconstruction":recon_loss_occ ,"color_reconstruction":recon_loss_color}
         return outputs
 
