@@ -141,22 +141,15 @@ def train_pointcloud(train_model, config, args, phase = "1"):
                 name = args.name
                 expr = args.training_mode
                 torch.save(train_model.state_dict(), "checkpoints/{}_{}_{}_{}_phase{}.pth".format(name,expr,config.domain,config.perception,phase))
-                """
-                input_pcs = [(coords[0,:,:] * (occ[0,:,:]+1)/ 2,coord_color[0,:,:]),
-                    (point_cloud[0,:,:],rgb[0,:,:]),
-                    (coords[0,:,:] * (occ[0,:,:]+1)/ 2,coord_color[0,:,:])]
-                visualize_pointcloud(fig,input_pcs, "pointcloud")
-                """            
-                np.save("outputs/point_cloud.npy",np.array(point_cloud[0,:,:]))
-                np.save("outputs/rgb.npy",np.array(rgb[0,:,:]))
-                np.save("outputs/coords.npy",np.array(coords[0,:,:]))
-                np.save("outputs/occ.npy",np.array(occ[0,:,:]))
-                np.save("outputs/coord_color.npy",np.array(coord_color[0,:,:]))
 
-                np.save("outputs/recon_occ.npy",np.array(recon_occ[0,:].unsqueeze(-1).detach()))
-                np.save("outputs/recon_coord_color.npy",np.array(recon_coord_color[0,:,:].detach()))
+                np.save("outputs/point_cloud.npy",np.array(point_cloud[0,:,:].cpu()))
+                np.save("outputs/rgb.npy",np.array(rgb[0,:,:].cpu()))
+                np.save("outputs/coords.npy",np.array(coords[0,:,:].cpu()))
+                np.save("outputs/occ.npy",np.array(occ[0,:,:].cpu()))
+                np.save("outputs/coord_color.npy",np.array(coord_color[0,:,:].cpu()))
 
-
+                np.save("outputs/recon_occ.npy",np.array(recon_occ[0,:].cpu().unsqueeze(-1).detach()))
+                np.save("outputs/recon_coord_color.npy",np.array(recon_coord_color[0,:,:].cpu().detach()))
             itrs += 1
 
             sys.stdout.write ("\rEpoch: {}, Itrs: {} Loss: {} Percept:{} Language:{}, Time: {}".format(epoch + 1, itrs, working_loss,perception_loss,language_loss,datetime.timedelta(seconds=time.time() - start)))

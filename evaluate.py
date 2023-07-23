@@ -77,12 +77,12 @@ weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":
 evalparser = argparse.ArgumentParser()
 evalparser.add_argument("--name",               default = "WLK")
 evalparser.add_argument("--device",             default = config.device)
-evalparser.add_argument("--dataset",            default = "aluneth")
+evalparser.add_argument("--dataset",            default = "Objects3d")
 evalparser.add_argument("--phase",              default = 1)
-evalparser.add_argument("--perception",         default = "psgnet")
-evalparser.add_argument("--training_mode",      default = "joint")
+evalparser.add_argument("--perception",         default = "point_net")
+evalparser.add_argument("--training_mode",      default = "3d_perception")
 evalparser.add_argument("--loss_weights",       default = weights)
-evalparser.add_argument("--checkpoint_dir",     default = False)
+evalparser.add_argument("--checkpoint_dir",     default = "checkpoints/KFT_3d_perception_toy_point_net_phase1.pth")
 
 evalargs = evalparser.parse_args()
 config.perception = evalargs.perception
@@ -95,6 +95,8 @@ else:
     print("No checkpoint to load and creating a new model instance")
     model = SceneLearner(config)
 model = model.to(evalargs.device)
+
+print("start evaluation:")
 
 if evalargs.dataset in ["Objects3d"]:
     print("start the 3d point cloud model training.")
