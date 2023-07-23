@@ -158,6 +158,18 @@ class CanonicalUnit(nn.Module):
     def forward(self, x):
         return x
 
+def mask_localization(points,masks):
+    """
+    points: [B,N,3]
+    masks:  [B,K,N,1]
+    """
+    N = points.shape[1]
+    central_points = torch.einsum("bnu,bknv->bku",points,masks)
+    mask_weights = torch.einsum("bknd->bk",masks)
+    diffs = (central_points.unsqueeze(2).repeat(1,1,N,1) - points) * masks
+    localization_loss = torch.sum(diffs * diffs / mask_weights,dim = 2)
+    return {"centers":central_points,"localization_loss":localization_loss}
+
 class HierarchicalVNN(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -182,10 +194,10 @@ class HierarchicalVNN(nn.Module):
         query_points = inputs['coords'] * self.scaling 
 
         enc_in = torch.cat([enc_in, inputs['rgb']], 2)
-
         z = self.encoder(enc_in)
 
         outputs = {}
+
         
         if self.return_features:
             outputs['occ_branch'], outputs['features'], outputs['features2'], outputs['color'], outputs['occ'] = self.decoder(inputs['coords'], inputs['occ'], query_points, z)
