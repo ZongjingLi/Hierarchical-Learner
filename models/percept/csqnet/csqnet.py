@@ -14,6 +14,7 @@ def evaluate_pose(x, att):
         att * x[:, :, None, :, None], dim=3) # B3K1
     return ts
 
+
 class CSQModule(nn.Module):
     def __init__(self, config, num_slots):
         super().__init__()

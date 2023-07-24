@@ -156,6 +156,8 @@ class CanonicalUnit(nn.Module):
         self.kq_dim = kq_dim
     
     def forward(self, x):
+        for i in range(10):
+            pass
         return x
 
 def mask_localization(points,masks):
