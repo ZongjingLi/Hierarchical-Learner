@@ -33,7 +33,6 @@ class SceneLearner(nn.Module):
 
         # [Concept Structure Embedding]
         self.box_registry = build_box_registry(config)
-
         # [Neuro Symbolic Executor]
         self.executor = SceneProgramExecutor(config)
         self.rep = config.concept_type

@@ -302,3 +302,10 @@ class Exist(SymbolicProgram):
         max_logit, query_object = child["end"].max(-1)
         return {**child, "end": max_logit}
 
+class ExpandParts(SymbolicProgram):
+    def __init__(self, *args):
+        super().__nit__(*args)
+        self.child, args
+
+    def __call__(self, executor):
+        return 1
