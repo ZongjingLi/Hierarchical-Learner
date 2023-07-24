@@ -1,66 +1,60 @@
-from models.percept.construct_net import *
-from datasets import *
+
+import torch
+import torch.nn as nn
+
+import numpy as np
+from utils import *
 from config import *
 
-# [Grid-Line Domain Diff]
-def lin2img(lin,b):return lin.reshape([b,128,128,3])
+import matplotlib.pyplot as plt
 
-test_dataset = SpriteData(split = "train")
-test_dataset = ToyData(split = "train")
-#test_dataset = AcherusDataset(split = "train")
-dataloader = torch.utils.data.DataLoader(test_dataset, batch_size = 1, shuffle = True)
+root = config.dataset_root
+cat = "chair"
 
-for sample in dataloader:
-    ims = sample["image"]
-    break;
+path = root + "/partnethiergeo/{}_hier/172.json".format(cat)
+data = load_json(path)
+label = data["label"]
+print("label",label)
+print("edges",data["edges"])
+print("box",data["box"])
+print("children",data["children"])
+print("id",data["id"])
 
-def build_perception(size,length,device):
-    edges = [[],[]]
-    for i in range(size):
-        for j in range(size):
-            # go for all the points on the grid
-            coord = [i,j];loc = i * size + j
-            
-            for r in range(25):
-                random_long_range = torch.randint(128, (1,2) )[0]
-                edges[0].append(random_long_range[0] // size)
-                edges[1].append(random_long_range[1] % size)
-            for dx in range(-length,length+1):
-                for dy in range(-length,length+1):
-                    if i+dx < size and i+dx>=0 and j+dy<size and j+dy>=0:
-                        if 1 and (i+dx) * size + (j + dy) != loc:
-                            edges[0].append(loc)
-                            edges[1].append( (i+dx) * size + (j + dy))
-    return torch.tensor(edges).to(device)
 
-construct_net = ConstructNet(config)
+path = root + "/partnethiergeo/{}_geo/172.npz".format(cat)
+data = np.load(path)
+print(data.files)
+for name in data.files:
+    print(name, data[name].shape)
 
-outputs = construct_net(ims)
 
-abstract_scene = outputs["abstract_scene"][-1]
-level_masks = abstract_scene["masks"]
 
-print(level_masks.shape)
-base_mask = level_masks.detach()
-print(base_mask.max())
+def visualize_pointcloud(input_pcs,name="pc"):
+    rang = 0.4; N = len(input_pcs)
+    fig = plt.figure("visualize",figsize=plt.figaspect(1/N), frameon = True)
+    for i in range(N):
+        ax = fig.add_subplot(1, N, 1 + i, projection='3d')
+        ax.set_zlim(-rang,rang);ax.set_xlim(-rang,rang);ax.set_ylim(-rang,rang)
+        # make the panes transparent
+        for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
+            axis.set_ticklabels([])
+            axis._axinfo['axisline']['linewidth'] = 1
+            axis._axinfo['axisline']['color'] = (0, 0, 0)
+            axis._axinfo['grid']['linewidth'] = 0.5
+            axis._axinfo['grid']['linestyle'] = "-"
+            axis._axinfo["grid"]['color'] =  (1,1,1,0)
+            axis._axinfo['tick']['inward_factor'] = 0.0
+            axis._axinfo['tick']['outward_factor'] = 0.0
+            axis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.set_axis_off()
+        ax.view_init(elev = -80, azim = -90)
+        coords = input_pcs[i][0]
+        colors = input_pcs[i][1]
 
-b = 0
-for i in range(base_mask.shape[1]):
-    plt.subplot(1, 2, 1);plt.tick_params(left = False, right = False , labelleft = False ,
-                labelbottom = False, bottom = False);
-    plt.imshow(base_mask[b,i], cmap="bone")
-    plt.subplot(1, 2, 2);plt.tick_params(left = False, right = False , labelleft = False ,
-                labelbottom = False, bottom = False);
+        ax.scatter(coords[:,0],coords[:,1],coords[:,2], c = colors)
+    plt.savefig("outputs/{}.png".format(name))
 
-    plt.imshow(base_mask[b,i].unsqueeze(-1) * ims[0])
-    #bx = base_locs[i] / 128
-    #by = base_locs[i] % 128
-    #plt.scatter(bx,by)
-    plt.pause(0.5)
-plt.show()
-
-B = 1
-for b in range(B):
-    plt.subplot(1, B, b + 1);plt.tick_params(left = False, right = False , labelleft = False ,
-                labelbottom = False, bottom = False); plt.imshow(ims[b,:,:,:])
+pcs = data["parts"]
+n = 0
+visualize_pointcloud([(pcs[n],torch.zeros(pcs[n].shape[0],3) )])
 plt.show()
