@@ -9,10 +9,32 @@ def evaluate_pose(x, att):
     # ts: B3k1
     pai = att.sum(dim=3, keepdim=True) # B1K11
     att = att / torch.clamp(pai, min=1e-3)
-
     ts = torch.sum(
         att * x[:, :, None, :, None], dim=3) # B3K1
     return ts
+
+def spatial_variance(x, att, norm_type="l2"):
+    pai = att.sum(dim=3, keepdim=True) # B1K11
+    att = att / torch.clamp(pai, min=1e-3)
+    ts = torch.sum(
+        att * x[:, :, None, :, None], dim=3) # B3K1
+
+    x_centered = x[:, :, None] - ts # B3KN
+    x_centered = x_centered.permute(0, 2, 3, 1) # BKN3
+    att = att.squeeze(1) # BKN1
+    cov = torch.matmul(
+        x_centered.transpose(3, 2), att * x_centered) # BK33
+    
+    # l2 norm
+    vol = torch.diagonal(cov, dim1=-2, dim2=-1).sum(2) # BK
+    if norm_type == "l2":
+        vol = vol.norm(dim=1).mean()
+    elif norm_type == "l1":
+        vol = vol.sum(dim=1).mean()
+    else:
+        # vol, _ = torch.diagonal(cov, dim1=-2, dim2=-1).sum(2).max(dim=1)
+        raise NotImplementedError
+    return vol
 
 
 class CSQModule(nn.Module):
@@ -37,28 +59,40 @@ class CSQNet(nn.Module):
         self.config = config
         concept_dim = config.concept_dim
         construct = ()
-        self.base_encoder = AcneKpEncoder(config, indim = 4) # [Encoder]
+        self.base_encoder = AcneKpEncoder(config, indim = 3) # [Encoder]
 
         gc_dim = config.acne_dim 
         self.decoder = KpDecoder(self.config.acne_num_g, gc_dim,
             self.config.num_pts, self.config)                   # [Decoder]
+        self.chamfer_loss = ChamferLoss()
+    
         self.csq_modules = [CSQModule(config, num_slots) for num_slots in construct]
         if config.concept_projection:
             self.feature2concept = nn.Linear(config.latent_dim, concept_dim)
         self.scaling = 1.0
+    
+
 
     def forward(self, inputs):
+        pc = inputs['point_cloud'].permute(0,2,1) * self.scaling
         enc_in = inputs['point_cloud'] * self.scaling 
-        query_points = inputs['coords'] * self.scaling 
-        
 
-        enc_in = torch.cat([enc_in, inputs['rgb']], 2)[...,None].permute(0,2,1,3)
+        enc_in = enc_in[...,None].permute(0,2,1,3)
 
-        f_att = self.base_encoder(inputs['point_cloud'] * self.scaling , return_att=True)
-        base_feature, attention = f_att
-        pos = evaluate_pose(base_feature, attention)
+        f_att = self.base_encoder(enc_in, return_att=True)
+        gc, attention = f_att
+        pose_locals = evaluate_pose(pc , attention)
+        kps = pose_locals.squeeze(-1)
+        loc_loss = spatial_variance(pc, attention, norm_type="l2")
+        # reconstruction from canonical capsules 
 
-        base_feature = base_feature.squeeze(3)
+        gc = torch.cat([kps[..., None], gc], dim=1)
+
+        y = self.decoder(gc.transpose(2, 1).squeeze(-1))
+
+        chamfer_loss = self.chamfer_loss(pc.permute(0,2,1), y) # Loss
+
+
         attention = attention.squeeze(1)
         attention = attention.squeeze(3)
 
@@ -68,6 +102,7 @@ class CSQNet(nn.Module):
         for csqnet in self.csq_modules:
             csqnet(scene_construct)
 
-        losses = {"reconstruction":1.0,"localization":0.1}
-        outputs = {"loss":losses,"occ":[torch.tensor(1.0)],"color":[torch.tensor(0.0)]}
+
+        losses = {"chamfer":chamfer_loss,"reconstruction":0.0,"localization":loc_loss}
+        outputs = {"loss":losses,}
         return outputs

@@ -68,6 +68,11 @@ def train_pointcloud(train_model, config, args, phase = "1"):
     #[setup the training and validation dataset]
     if args.dataset == "Objects3d":
         train_dataset= Objects3dDataset(config, sidelength = 128, stage = int(phase))
+    if args.dataset == "StructureNet":
+        if phase in ["0","1"]:
+            train_dataset = StructureDataset(config)
+        if phase in ["2","3","4"]:
+            train_dataset = StructureGroudingDataset(config)
 
     dataloader = DataLoader(train_dataset, batch_size = int(args.batch_size), shuffle = args.shuffle)
 
@@ -99,11 +104,6 @@ def train_pointcloud(train_model, config, args, phase = "1"):
         for sample in dataloader:
             sample, gt = sample
             # [perception module training]
-            point_cloud = sample["point_cloud"]
-            rgb = sample["rgb"]
-            coords = sample["coords"]
-            occ = sample["occ"]
-            coord_color = sample["coord_color"]
 
             outputs = model.scene_perception(sample)
             all_losses = {}
@@ -113,9 +113,6 @@ def train_pointcloud(train_model, config, args, phase = "1"):
             for loss_name in outputs["loss"]:
                 weight = args.loss_weights[loss_name]
                 perception_loss += outputs["loss"][loss_name] * weight
-
-            recon_occ = outputs["occ"]
-            recon_coord_color = outputs["color"]
 
             # [Language Loss]
             language_loss = 0
@@ -142,21 +139,31 @@ def train_pointcloud(train_model, config, args, phase = "1"):
                 expr = args.training_mode
                 torch.save(train_model.state_dict(), "checkpoints/{}_{}_{}_{}_phase{}.pth".format(name,expr,config.domain,config.perception,phase))
 
-                np.save("outputs/point_cloud.npy",np.array(point_cloud[0,:,:].cpu()))
-                np.save("outputs/rgb.npy",np.array(rgb[0,:,:].cpu()))
-                np.save("outputs/coords.npy",np.array(coords[0,:,:].cpu()))
-                np.save("outputs/occ.npy",np.array(occ[0,:,:].cpu()))
-                np.save("outputs/coord_color.npy",np.array(coord_color[0,:,:].cpu()))
+                if args.dataset == "Objects3d":
+                    point_cloud = sample["point_cloud"]
+                    rgb = sample["rgb"]
+                    coords = sample["coords"]
+                    occ = sample["occ"]
+                    coord_color = sample["coord_color"]
+                    np.save("outputs/point_cloud.npy",np.array(point_cloud[0,:,:].cpu()))
+                    np.save("outputs/rgb.npy",np.array(rgb[0,:,:].cpu()))
+                    np.save("outputs/coords.npy",np.array(coords[0,:,:].cpu()))
+                    np.save("outputs/occ.npy",np.array(occ[0,:,:].cpu()))
+                    np.save("outputs/coord_color.npy",np.array(coord_color[0,:,:].cpu()))
 
-                np.save("outputs/recon_occ.npy",np.array(recon_occ[0,:].cpu().unsqueeze(-1).detach()))
-                np.save("outputs/recon_coord_color.npy",np.array(recon_coord_color[0,:,:].cpu().detach()))
+                    recon_occ = outputs["occ"]
+                    recon_coord_color = outputs["color"]
+                    np.save("outputs/recon_occ.npy",np.array(recon_occ[0,:].cpu().unsqueeze(-1).detach()))
+                    np.save("outputs/recon_coord_color.npy",np.array(recon_coord_color[0,:,:].cpu().detach()))
+                if args.dataset == "StructureNet":
+                    pass
             itrs += 1
 
             sys.stdout.write ("\rEpoch: {}, Itrs: {} Loss: {} Percept:{} Language:{}, Time: {}".format(epoch + 1, itrs, working_loss,perception_loss,language_loss,datetime.timedelta(seconds=time.time() - start)))
         writer.add_scalar("epoch_loss", epoch_loss, epoch)
     print("\n\nExperiment {} : Training Completed.".format(args.name))
 
-weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":1.0}
+weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":1.0,"chamfer":1.0}
 
 argparser = argparse.ArgumentParser()
 # [general config of the training]
@@ -168,6 +175,7 @@ argparser.add_argument("--optimizer",               default = "Adam")
 argparser.add_argument("--lr",                      default = 2e-4)
 argparser.add_argument("--batch_size",              default = 1)
 argparser.add_argument("--dataset",                 default = "toy")
+argparser.add_argument("--concept_type",            default = False)
 
 # [perception and language grounding training]
 argparser.add_argument("--perception",              default = "psgnet")
@@ -195,6 +203,7 @@ argparser.add_argument("--pretrain_perception",     default = False)
 args = argparser.parse_args()
 
 config.perception = args.perception
+if args.concept_type: config.concept_type = args.concept_type
 
 if args.checkpoint_dir:
     #model = torch.load(args.checkpoint_dir, map_location = config.device)
@@ -230,7 +239,7 @@ def build_perception(size,length,device):
 
 print("using perception: {} knowledge:{} dataset:{}".format(args.perception,config.concept_type,args.dataset))
 
-if args.dataset in ["Objects3d"]:
+if args.dataset in ["Objects3d","StructureNet"]:
     print("start the 3d point cloud model training.")
     train_pointcloud(model, config, args, phase = args.phase)
 

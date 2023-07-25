@@ -7,3 +7,4 @@ from .acherus import *
 from .physica import *
 from .industry import *
 from .objects3d import *
+from .structure_net import *

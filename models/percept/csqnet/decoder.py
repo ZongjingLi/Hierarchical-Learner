@@ -144,6 +144,7 @@ class KpDecoder(nn.Module):
 
         for i in range(self.num_kp):
             y_ = y[:, i].transpose(2, 1)
+
             out_ = self.decoder[i](y_) # B*3*num_pts_per_grid
             if self.config.pose_code in ["nl-noR_T"]:
                 out_ = out_ + t[:, i][..., None]

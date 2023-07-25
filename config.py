@@ -21,6 +21,13 @@ parser.add_argument("--resolution",         default = (128,128))
 parser.add_argument("--hidden_dim",         default = 100)
 parser.add_argument("--latent_dim",         default = 128) # point cloud encoder
 parser.add_argument("--scaling",            default = 10.0)
+
+# acne network
+parser.add_argument("--num_pts",            default = 100)
+parser.add_argument("--indim",              default = 3)
+parser.add_argument("--grid_dim",           default = 64)
+parser.add_argument("--decoder_grid",       default = "learnable")
+parser.add_argument("--decoder_bottleneck_size",    default = 64)
 parser.add_argument("--acne_net_depth",     default = 3)
 parser.add_argument("--acne_num_g",         default = 10)
 parser.add_argument("--acne_dim",           default = 128)
@@ -29,7 +36,9 @@ parser.add_argument("--cn_type", type=str,
                       default="acn_b",
                       help="Encoder context normalization type")
 parser.add_argument("--node_feat_dim",      default = 100)
+parser.add_argument("--pose_code",          default = "nl-noR_T")
 
+# concept learner structure
 parser.add_argument("--object_num",         default = 7)
 parser.add_argument("--part_num",           default = 3)
 
