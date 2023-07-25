@@ -27,14 +27,22 @@ def dfs(node):
             dfs(child)
     else:print(node["label"])
 
-dfs(data)
+#dfs(data)
+
+def color(pc,pcc,node):
+    if "children" in node:
+        for child in node["children"]:
+            print(len(node["box"]))
+            color(pcs, node, child)
+    else:
+        print("render")
 
 
-path = root + "/partnethiergeo/{}_geo/172.npz".format(cat)
-data = np.load(path)
-print(data.files)
-for name in data.files:
-    print(name, data[name].shape)
+hier_path = root + "/partnethiergeo/{}_geo/172.npz".format(cat)
+hier_data = np.load(hier_path)
+print(hier_data.files)
+for name in hier_data.files:
+    print(name, hier_data[name].shape)
 
 
 
@@ -63,7 +71,11 @@ def visualize_pointcloud(input_pcs,name="pc"):
         ax.scatter(coords[:,0],coords[:,1],coords[:,2], c = colors)
     plt.savefig("outputs/{}.png".format(name))
 
-pcs = data["parts"]
 n = 0
-visualize_pointcloud([(pcs[n],torch.zeros(pcs[n].shape[0],3) )])
+pcs = hier_data["parts"]
+pcc = torch.zeros(pcs[n].shape[0],3)
+
+color(pcs,pcc, data)
+
+visualize_pointcloud([(pcs[n],pcc )])
 plt.show()
