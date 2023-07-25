@@ -44,7 +44,7 @@ def color(pc,pcc,node):
         idx = torch.logical_and(pcc > lower , upper > pcc)
         print(idx.shape)
         
-        pcc[idx] = 0.3
+        pcc[idx] = 0.5
 
         print("render")
 
