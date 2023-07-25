@@ -20,6 +20,15 @@ print("box",data["box"])
 print("children",data["children"])
 print("id",data["id"])
 
+def dfs(node):
+    if "children" in node:
+        for child in node["children"]:
+            print(node["label"],"->")
+            dfs(child)
+    else:print(node["label"])
+
+dfs(data)
+
 
 path = root + "/partnethiergeo/{}_geo/172.npz".format(cat)
 data = np.load(path)
