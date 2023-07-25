@@ -13,3 +13,14 @@ class StructureDataset(Dataset):
 
     def __getitem__(self, idx):
         return idx
+
+class StructureGroudingDataset(Dataset):
+    def __init__(self, config):
+        super().__init__()
+        root = config.root
+        path = root + "/partnetheirgeo"
+    
+    def __len__(self):return 0
+
+    def __getitem__(self, idx):
+        return idx
