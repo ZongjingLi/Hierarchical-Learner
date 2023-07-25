@@ -28,13 +28,24 @@ def dfs(node):
     else:print(node["label"])
 
 #dfs(data)
+npt = 1000
 
 def color(pc,pcc,node):
     if "children" in node:
         for child in node["children"]:
-            print(len(node["box"]))
-            color(pcs, node, child)
+            lower = node["box"][:3]
+            upper = node["box"][3:6]
+            color(pcs, pcc, child)
     else:
+        lower = torch.tensor(node["box"][:3]).unsqueeze(0).repeat(npt,1)
+        upper = torch.tensor(node["box"][3:6]).unsqueeze(0).repeat(npt,1)
+        print(node["box"])
+
+        idx = torch.logical_and(pcc > lower , upper > pcc)
+        print(idx.shape)
+        
+        pcc[idx] = 0.3
+
         print("render")
 
 
@@ -73,7 +84,7 @@ def visualize_pointcloud(input_pcs,name="pc"):
 
 n = 0
 pcs = hier_data["parts"]
-pcc = torch.zeros(pcs[n].shape[0],3)
+pcc = torch.clamp(torch.zeros([pcs[n].shape[0],3]) ** 2,0,1)
 
 color(pcs,pcc, data)
 
