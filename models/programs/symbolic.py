@@ -6,6 +6,8 @@ import torch.nn.functional as F
 from .abstract_program import AbstractProgram
 from utils import copy_dict,apply,EPS
 
+inf = 1e9
+
 class SymbolicProgram(AbstractProgram):
     def __init__(self, *args):
         super().__init__(*args)
@@ -100,14 +102,13 @@ class Scene(SymbolicProgram):
     def __call__(self,executor):
         features = executor.kwargs["features"]
         #logit = torch.ones(features.shape[0] ,device = features.device) * self.BIG_NUMBER
-        score = executor.kwargs["end"]
+        scores = executor.kwargs["end"]
 
         scene_tree= executor.kwargs["features"]
 
-        logit = torch.log(score / (1 - score))
+        logits = [torch.log(score / (1 - score)) for score in scores]
 
-
-        return {"end":logit}
+        return {"end":logits}
 
 class Unique(SymbolicProgram):
 
@@ -131,14 +132,14 @@ class Filter(SymbolicProgram):
 
     def __call__(self, executor):
         child = self.child(executor)
-        mask  = executor.entailment(executor.kwargs["features"],
-            executor.get_concept_embedding(self.concept))
+        tree_masks = [ torch.min(child["end"],executor.entailment(feature,
+            executor.get_concept_embedding(self.concept))) for feature in executor.kwargs["features"]
+        ]
 
-        filter_logit = torch.min(child["end"], mask)
-        query_object = mask[..., 0].max(-1).indices
+        #query_object = mask[..., 0].max(-1).indices
         #print(filter_logit)
-        return {**child, "end": filter_logit, 
-            "feature": executor.kwargs["features"], "query_object": query_object}
+        return {**child, "end": tree_masks, 
+            "feature": executor.kwargs["features"],} #"query_object": query_object}
 
 
 class Relate(SymbolicProgram):
@@ -164,8 +165,10 @@ class Intersect(SymbolicProgram):
     def __call__(self, executor):
         left_child = self.left_child(executor)
         right_child = self.right_child(executor)
-        logit = torch.min(left_child["end"], right_child["end"])
-        return {**left_child, **right_child, "end": logit}
+        tree_logits = [
+            torch.min(left_child["end"][i], right_child["end"][i]) for i in range(len(right_child["end"]))
+        ]
+        return {**left_child, **right_child, "end": tree_logits}
 
 
 class Union(SymbolicProgram):
@@ -177,8 +180,10 @@ class Union(SymbolicProgram):
     def __call__(self, executor):
         left_child = self.left_child(executor)
         right_child = self.right_child(executor)
-        logit = torch.max(left_child["end"], right_child["end"])
-        return {**left_child, **right_child, "end": logit}
+        tree_logits = [
+            torch.max(left_child["end"][i], right_child["end"][i]) for i in range(len(right_child["end"]))
+        ]
+        return {**left_child, **right_child, "end": tree_logits}
 
 
 class Count(SymbolicProgram):
@@ -189,7 +194,8 @@ class Count(SymbolicProgram):
     def __call__(self, executor):
         child = self.child(executor)
         if executor.training:
-            count = torch.sigmoid(child["end"]).sum(-1)
+            count = 0
+            for level in child["end"]:count += torch.sigmoid(level).sum(-1)
         else:
             count = (child["end"] >= 0).sum(-1)
 
@@ -299,7 +305,10 @@ class Exist(SymbolicProgram):
 
     def __call__(self, executor):
         child = self.child(executor)
-        max_logit, query_object = child["end"].max(-1)
+        max_logit = -inf
+        for level in child["end"]:
+            new_logit, query_object = level.max(-1)
+            max_logit = torch.max(max_logit, new_logit)
         return {**child, "end": max_logit}
 
 class Parents(SymbolicProgram):
@@ -308,7 +317,17 @@ class Parents(SymbolicProgram):
         self.child, = args
 
     def __call__(self, executor):
-        return 1
+        child = self.child(executor)
+        tree_logits = [score for score in child["end"]]
+        connections = self.kwargs["connections"]
+        assert len(connections) + 1 == len(child["end"]),\
+            print("Invalid Scene Connection Detected: scene:{} connection:{}".format(len(child["end"]),len(connections)))
+        for i in range(1,len(tree_logits)):
+            current_scores = tree_logits[i]
+            path_prob = torch.einsum("mnd,nd->md",connections[i], current_scores)
+            tree_logits[i + 1] = torch.min(tree_logits[i+1], path_prob)
+
+        return {**child, "end": tree_logits}
 
 class  Subtree(SymbolicProgram):
     def __init__(self, *args):
@@ -316,4 +335,14 @@ class  Subtree(SymbolicProgram):
         self.child = args
 
     def __call__(self, executor):
-        return 1
+        child = self.child(executor)
+        tree_logits = [score for score in child["end"]]
+        connections = self.kwargs["connections"]
+        assert len(connections) + 1 == len(child["end"]),\
+            print("Invalid Scene Connection Detected: scene:{} connection:{}".format(len(child["end"]),len(connections)))
+        for i in range(len(tree_logits)-1,0,-1):
+            current_scores = tree_logits[i]
+            path_prob = torch.einsum("mnd,nd->md",connections[i], current_scores)
+            tree_logits[i - 1] = torch.min(tree_logits[i+1], path_prob)
+
+        return {**child, "end": tree_logits}
