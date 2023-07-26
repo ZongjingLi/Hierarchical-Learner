@@ -156,7 +156,14 @@ def train_pointcloud(train_model, config, args, phase = "1"):
                     np.save("outputs/recon_occ.npy",np.array(recon_occ[0,:].cpu().unsqueeze(-1).detach()))
                     np.save("outputs/recon_coord_color.npy",np.array(recon_coord_color[0,:,:].cpu().detach()))
                 if args.dataset == "StructureNet":
-                    pass
+                    recon_pc = outputs["recon_pc"][0]
+                    point_cloud = sample["point_cloud"][0]
+                    masks = outputs["masks"][0]
+                    print(masks.shape)
+                    np.save("outputs/recon_point_cloud.npy",np.array(recon_pc.cpu().detach()))
+                    np.save("outputs/point_cloud.npy",np.array(point_cloud.cpu().detach()))
+                    np.save("outputs/masks.npy",np.array(masks.cpu().detach()))
+                    
             itrs += 1
 
             sys.stdout.write ("\rEpoch: {}, Itrs: {} Loss: {} Percept:{} Language:{}, Time: {}".format(epoch + 1, itrs, working_loss,perception_loss,language_loss,datetime.timedelta(seconds=time.time() - start)))

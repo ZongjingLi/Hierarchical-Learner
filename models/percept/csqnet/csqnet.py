@@ -104,5 +104,5 @@ class CSQNet(nn.Module):
 
 
         losses = {"chamfer":chamfer_loss,"reconstruction":0.0,"localization":loc_loss}
-        outputs = {"loss":losses,}
+        outputs = {"loss":losses,"recon_pc":y,"masks":attention}
         return outputs

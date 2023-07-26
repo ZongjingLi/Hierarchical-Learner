@@ -402,3 +402,4 @@ FodyWeavers.xsd
 *.png
 *.zip
 *.pth
+*.npy
