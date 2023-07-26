@@ -2,7 +2,8 @@ import torch
 import argparse 
 
 from models import *
-translator = {"scene":Scene,"exist":Exist,"filter":Filter,"union":Union,"unique":Unique,"count":Count}
+translator = {"scene":Scene,"exist":Exist,"filter":Filter,"union":Union,"unique":Unique,"count":Count,
+              "parents":Parents,"subtree":Subtree}
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 

@@ -62,7 +62,6 @@ class SceneProgramExecutor(nn.Module):
 
     def forward(self, q, **kwargs):
         self.kwargs = kwargs
-
         return q(self)
 
     def parse(self,string, translator = None):

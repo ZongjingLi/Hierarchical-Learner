@@ -6,7 +6,8 @@ import torch.nn.functional as F
 from .abstract_program import AbstractProgram
 from utils import copy_dict,apply,EPS
 
-inf = 1e9
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
+inf = torch.tensor(int(1e9)).to(device)
 
 class SymbolicProgram(AbstractProgram):
     def __init__(self, *args):
@@ -15,6 +16,7 @@ class SymbolicProgram(AbstractProgram):
         self.registered = None, []
 
     def evaluate(self, box_registry, **kwargs):
+
         p = super(SymbolicProgram,self)._transform(box_registry, **kwargs)
         p.kwargs = copy_dict(kwargs)
         p.registered = self.registered
@@ -100,6 +102,7 @@ class Scene(SymbolicProgram):
         super().__init__(*args)
 
     def __call__(self,executor):
+
         features = executor.kwargs["features"]
         #logit = torch.ones(features.shape[0] ,device = features.device) * self.BIG_NUMBER
         scores = executor.kwargs["end"]
@@ -319,30 +322,39 @@ class Parents(SymbolicProgram):
     def __call__(self, executor):
         child = self.child(executor)
         tree_logits = [score for score in child["end"]]
-        connections = self.kwargs["connections"]
+        
+        connections = executor.kwargs["connections"]
         assert len(connections) + 1 == len(child["end"]),\
             print("Invalid Scene Connection Detected: scene:{} connection:{}".format(len(child["end"]),len(connections)))
         for i in range(1,len(tree_logits)):
-            current_scores = tree_logits[i]
-            path_prob = torch.einsum("mnd,nd->md",connections[i], current_scores)
-            tree_logits[i + 1] = torch.min(tree_logits[i+1], path_prob)
+            current_scores = torch.sigmoid(tree_logits[i-1])
+            path_prob = torch.einsum("mn,n->m",connections[i-1], current_scores)
+
+            tree_logits[i] = torch.max(torch.sigmoid(tree_logits[i]), path_prob)
+            tree_logits[i] = torch.log(tree_logits[i] / (1 - tree_logits[i]))
+        EPS = 1e-6
+        tree_logits[0] = torch.log(torch.ones([len(tree_logits[0])],device = device) * EPS)
 
         return {**child, "end": tree_logits}
 
 class  Subtree(SymbolicProgram):
     def __init__(self, *args):
         super().__init__(*args)
-        self.child = args
+        self.child, = args
 
     def __call__(self, executor):
         child = self.child(executor)
         tree_logits = [score for score in child["end"]]
-        connections = self.kwargs["connections"]
+        connections = executor.kwargs["connections"]
         assert len(connections) + 1 == len(child["end"]),\
             print("Invalid Scene Connection Detected: scene:{} connection:{}".format(len(child["end"]),len(connections)))
-        for i in range(len(tree_logits)-1,0,-1):
-            current_scores = tree_logits[i]
-            path_prob = torch.einsum("mnd,nd->md",connections[i], current_scores)
-            tree_logits[i - 1] = torch.min(tree_logits[i+1], path_prob)
 
+        for i in range(len(tree_logits)-1,0,-1):
+            current_scores = torch.sigmoid(tree_logits[i])
+            path_prob = torch.einsum("mn,m->n",connections[i - 1], current_scores)
+
+            tree_logits[i - 1] = torch.max(torch.sigmoid(tree_logits[i-1]), path_prob)
+            tree_logits[i - 1] = torch.log(tree_logits[i-1] / (1 - tree_logits[i-1]))
+        EPS = 1e-6
+        tree_logits[-1] = torch.log(torch.ones([len(tree_logits[-1])],device = device) * EPS)
         return {**child, "end": tree_logits}
