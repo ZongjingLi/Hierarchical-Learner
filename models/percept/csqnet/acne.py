@@ -24,11 +24,12 @@ class KoutLayer(nn.Module):
                 self.norm = nn.Identity()
         else:
             self.linear = None
+        self.scale = nn.Parameter(torch.ones(1))
 
     def forward(self, x, context_vec=None, return_att=False):
         
         attention = self.conv_att(x)
-        a = torch.softmax(attention, dim=1) # BKN1
+        a = torch.softmax(attention * self.scale, dim=1) # BKN1
         # ACN
         a = a[:, None]# B1GN1
 

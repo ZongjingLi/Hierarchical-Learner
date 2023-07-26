@@ -93,7 +93,6 @@ class CSQNet(nn.Module):
         kps = pose_locals.squeeze(-1)
         loc_loss = spatial_variance(pc, attention, norm_type="l2")
         equi_loss = equillibrium_loss(attention)
-        equi_loss = 0
         # reconstruction from canonical capsules 
 
         gc = torch.cat([kps[..., None], gc], dim=1)
@@ -106,7 +105,7 @@ class CSQNet(nn.Module):
         attention = attention.squeeze(1)
         attention = attention.squeeze(3)
 
-        scene_construct = {"scores":1,"features":1,"masks":1,"raw_features":0,"match":False}
+        scene_construct = [{"scores":1,"features":1,"masks":1,"raw_features":0,"match":False}]
 
         # [Construct the Hierarchical Representation]
         for csqnet in self.csq_modules:
@@ -114,5 +113,5 @@ class CSQNet(nn.Module):
 
 
         losses = {"chamfer":chamfer_loss,"reconstruction":0.0,"localization":loc_loss,"equillibrium_loss":equi_loss}
-        outputs = {"loss":losses,"recon_pc":y,"masks":attention}
+        outputs = {"loss":losses,"recon_pc":y,"masks":attention,"abstract_scene":scene_construct}
         return outputs
