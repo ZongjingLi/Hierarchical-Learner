@@ -159,7 +159,6 @@ def train_pointcloud(train_model, config, args, phase = "1"):
                     recon_pc = outputs["recon_pc"][0]
                     point_cloud = sample["point_cloud"][0]
                     masks = outputs["masks"][0]
-                    print(masks.shape)
                     np.save("outputs/recon_point_cloud.npy",np.array(recon_pc.cpu().detach()))
                     np.save("outputs/point_cloud.npy",np.array(point_cloud.cpu().detach()))
                     np.save("outputs/masks.npy",np.array(masks.cpu().detach()))
@@ -170,7 +169,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
         writer.add_scalar("epoch_loss", epoch_loss, epoch)
     print("\n\nExperiment {} : Training Completed.".format(args.name))
 
-weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":1.0,"chamfer":1.0}
+weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":1.0,"chamfer":1.0,"equillibrium_loss":1.0}
 
 argparser = argparse.ArgumentParser()
 # [general config of the training]

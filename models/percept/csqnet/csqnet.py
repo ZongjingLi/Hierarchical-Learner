@@ -13,6 +13,12 @@ def evaluate_pose(x, att):
         att * x[:, :, None, :, None], dim=3) # B3K1
     return ts
 
+def equillibrium_loss(att):
+    pai = att.sum(dim=3, keepdim=True) # B1K11
+    loss_att_amount = torch.var(pai.reshape(pai.shape[0], -1), dim=1).mean()
+    return loss_att_amount
+
+
 def spatial_variance(x, att, norm_type="l2"):
     pai = att.sum(dim=3, keepdim=True) # B1K11
     att = att / torch.clamp(pai, min=1e-3)
@@ -81,9 +87,13 @@ class CSQNet(nn.Module):
 
         f_att = self.base_encoder(enc_in, return_att=True)
         gc, attention = f_att
+
+
         pose_locals = evaluate_pose(pc , attention)
         kps = pose_locals.squeeze(-1)
         loc_loss = spatial_variance(pc, attention, norm_type="l2")
+        equi_loss = equillibrium_loss(attention)
+        equi_loss = 0
         # reconstruction from canonical capsules 
 
         gc = torch.cat([kps[..., None], gc], dim=1)
@@ -103,6 +113,6 @@ class CSQNet(nn.Module):
             csqnet(scene_construct)
 
 
-        losses = {"chamfer":chamfer_loss,"reconstruction":0.0,"localization":loc_loss}
+        losses = {"chamfer":chamfer_loss,"reconstruction":0.0,"localization":loc_loss,"equillibrium_loss":equi_loss}
         outputs = {"loss":losses,"recon_pc":y,"masks":attention}
         return outputs
