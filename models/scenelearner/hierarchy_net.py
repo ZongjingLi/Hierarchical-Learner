@@ -24,11 +24,13 @@ class GraphConvolution(nn.Module):
         if self.bias is not None:
             self.bias.data.uniform_(-stdv, stdv)
 
-    def forward(self, input, adj):             # 这里代码做了简化如 3.2节。
-        support = torch.mm(input, self.weight) # (2708, 16) = (2708, 1433) X (1433, 16)
-        output = torch.spmm(adj, support)      # (2708, 16) = (2708, 2708) X (2708, 16)
+    def forward(self, inputs, adj):
+        B = inputs.shape[0]
+        print(inputs.shape, self.weight.unsqueeze(0).repeat(B,1,1).shape)
+        support = torch.matmul(inputs, self.weight.unsqueeze(0).repeat(B,1,1))
+        output = torch.matmul(adj, support)     
         if self.bias is not None:
-            return output + self.bias          # 加上偏置 (2708, 16)
+            return output + self.bias         
         else:
             return output                      # (2708, 16)
 
@@ -37,28 +39,17 @@ class GraphConvolution(nn.Module):
                + str(self.in_features) + ' -> ' \
                + str(self.out_features) + ')'
 
-class GCN(nn.Module):                                             # 定义两层GCN
-    def __init__(self, nfeat, nhid, nclass, dropout):
-        super(GCN, self).__init__()
-        self.gc1 = GraphConvolution(nfeat, nhid)
-        self.gc2 = GraphConvolution(nhid, nclass)
-        self.dropout = dropout
-
-    def forward(self, x, adj):
-        x = torch.nn.functional.relu(self.gc1(x, adj))
-        x = torch.nn.functional.dropout(x, self.dropout, training=self.training)
-        x = self.gc2(x, adj)
-        return torch.nn.functional.log_softmax(x, dim=1)       # 对每一个节点做softmax
-
 
 class HierarchyBuilder(nn.Module):
-    def __init__(self, config, input_slots, output_slots):
+    def __init__(self, config, output_slots):
         super().__init__()
         num_unary_predicates = 4
         num_binary_predicates = 0
+        spatial_feature_dim = 3
+        input_dim = num_unary_predicates + spatial_feature_dim
         self.num_unary_predicates = num_unary_predicates
         self.num_binary_predicates = num_binary_predicates
-        self.graph_conv = GraphConvolution(input_slots,output_slots)
+        self.graph_convs = GraphConvolution(input_dim,output_slots)
 
     def forward(self, x, concept_builder):
         """
