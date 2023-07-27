@@ -220,7 +220,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
         writer.add_scalar("epoch_loss", epoch_loss, epoch)
     print("\n\nExperiment {} : Training Completed.".format(args.name))
 
-weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":1.0,"chamfer":1.0,"equillibrium_loss":1.0}
+weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":10.0,"chamfer":1.0,"equillibrium_loss":1.0}
 
 argparser = argparse.ArgumentParser()
 # [general config of the training]
