@@ -37,6 +37,9 @@ class SceneLearner(nn.Module):
         self.executor = SceneProgramExecutor(config)
         self.rep = config.concept_type
 
+        # [Hierarchy Structure Network]
+        self.scene_builder = nn.ModuleList([])
+
     def _check_nan_gradient(self):
 
         for param in self.model.parameters():

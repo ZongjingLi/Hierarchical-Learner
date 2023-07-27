@@ -50,12 +50,11 @@ class CSQModule(nn.Module):
         self.num_slots = num_slots
         if config.conpcept_projection:
             self.feature2concept = nn.Linear(config.latent_dim, concept_dim)
+        self.graph_conv = None
     
     
     def forward(self,x):
-        scores = 1
-        node_features = 1
-        masks = 1
+
         outputs = {"scores":scores,"features":node_features,"masks":masks,"match":False}
         return outputs
 
@@ -64,18 +63,19 @@ class CSQNet(nn.Module):
         super().__init__()
         self.config = config
         concept_dim = config.concept_dim
-        construct = ()
+        construct = config.hierarchy_construct
         self.base_encoder = AcneKpEncoder(config, indim = 3) # [Encoder]
 
         gc_dim = config.acne_dim 
         self.decoder = KpDecoder(self.config.acne_num_g, gc_dim,
             self.config.num_pts, self.config)                   # [Decoder]
         self.chamfer_loss = ChamferLoss()
-    
+
+        # [Concept Grouding Constructor]
         self.csq_modules = [CSQModule(config, num_slots) for num_slots in construct]
+        
         if config.concept_projection:
-            self.feature2concept = nn.Linear(config.latent_dim, concept_dim)
-        self.scaling = 1.0
+            self.feature2concept = nn.Linear(config.latent_dim, concept_dim) # Deprecated
     
 
 
@@ -101,10 +101,10 @@ class CSQNet(nn.Module):
 
         chamfer_loss = self.chamfer_loss(pc.permute(0,2,1), y) # Loss
 
-
         attention = attention.squeeze(1)
         attention = attention.squeeze(3)
 
+        # [Construct the Scene Representation]
         scene_construct = [{"scores":1,"features":1,"masks":1,"raw_features":0,"match":False}]
 
         # [Construct the Hierarchical Representation]
