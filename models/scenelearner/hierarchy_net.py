@@ -66,6 +66,11 @@ class HierarchyBuilder(nn.Module):
             x: feature to agglomerate [B,N,D]
         """
         factored_features = x
+
+        # [Perform Convolution on Factored States]
         graph_conv_masks = self.graph_conv(factored_features)
+
+        # [Build Connection Between Input Features and Conv Features]
+        #graph_conv_masks = torch.einsum("bnd,bmd->bnm")
         graph_conv_masks = F.softmax(graph_conv_masks, dim = 1)
-        return x
+        return graph_conv_masks #[B,N,M]

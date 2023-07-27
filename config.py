@@ -42,6 +42,7 @@ parser.add_argument("--pose_code",          default = "nl-noR_T")
 # concept learner structure
 parser.add_argument("--object_num",         default = 7)
 parser.add_argument("--part_num",           default = 3)
+parser.add_argument("--hierarchy_latent",   default = 128)
 parser.add_argument("--hierarchy_construct",default = [10,7,5])
 
 # setup the concept learner 

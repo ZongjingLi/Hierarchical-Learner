@@ -41,7 +41,7 @@ class SceneLearner(nn.Module):
         # [Hierarchy Structure Network]
         self.scene_builder = nn.ModuleList([])
     
-    def build_scene(self,features):
+    def build_scene(self,input_features):
         """
         features: BxNxD
         scores:   BxNx1 
@@ -51,11 +51,20 @@ class SceneLearner(nn.Module):
         connections = []
 
         for builder in self.scene_builder:
-            masks = builder(features) # [B,N,1]
+            #input_features [B,N,D]
+            masks = builder(input_features, self.box_registry) # [B,M,N]
             # [Build Scene Hierarchy]
-            scores = masks # hierarchy scores
-            features = masks * features # hierarchy features
-        scene_struct = {"scores":0,"features":0,"connections":0}
+            scores = torch.max(masks, dim = -1).values # hierarchy scores # [B,M]
+            features = torch.einsum("bmn,bnd",masks,input_features) # hierarchy features # [B,M,D]
+
+            # [Build Scores, Features, and Connections]
+            scores.append(scores) # [B,M]
+            features.append(features) # [B,M,D]
+            connections.append(masks) # [B,M,N]
+
+            input_features = features
+
+        scene_struct = {"scores":scores,"features":features,"connections":connections}
         return scene_struct
 
     def _check_nan_gradient(self):
