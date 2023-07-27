@@ -41,12 +41,15 @@ class SceneLearner(nn.Module):
         # [Hierarchy Structure Network]
         self.scene_builder = nn.ModuleList([])
     
-    def build_scene(self,features, scores = None):
+    def build_scene(self,features):
         """
         features: BxNxD
         scores:   BxNx1 
         """
-        if scores is None: scores = 1
+        scores = []
+        features  = []
+        connections = []
+
         for builder in self.scene_builder:
             masks = builder(features) # [B,N,1]
             # [Build Scene Hierarchy]
