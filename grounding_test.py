@@ -7,6 +7,7 @@ from config import *
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
+
 config.perception = "csqnet"
 learner = SceneLearner(config)
 
@@ -42,10 +43,7 @@ def visualize_tree(scores,connections,labels = None, sigma = False):
     if labels is None: labels = [
         ["p" for _ in range(len(scores[t]))] for t in range(len(scores))
     ]
-    layouts = []; eps = 0.05; width = 0.4; n = 1
-
-    im = plt.imread('pacman.png')
-    oi = OffsetImage(im, zoom = 0.15)
+    layouts = []; eps = 0.00; width = 0.4; n = 1
 
     # Draw Nodes and Possible Patches of the Tree
     for i,idx in enumerate(range(len(scores))):
@@ -54,9 +52,14 @@ def visualize_tree(scores,connections,labels = None, sigma = False):
         alphas = torch.sigmoid(scores[i]).cpu().detach() \
             if sigma else scores[i].cpu().detach()
         alphas = alphas.clamp(min_v,max_v)
-        plt.scatter(layout,torch.tensor(i/n).repeat(ss), \
+        ax.scatter(layout,torch.tensor(i/n).repeat(ss), \
             alpha = alphas, c = [tree_color for _ in range(ss)],linewidths=12)
-        for u in range(ss): plt.text(layout[u]-0.02,i/n,labels[i][u])
+        for u in range(ss): 
+            plt.text(layout[u]-0.02,i/n,labels[i][u])
+            im = plt.imread('assets/ice.png')
+            oi = OffsetImage(im, zoom = 0.15, alpha = float(alphas[u]))
+            box = AnnotationBbox(oi, (layout[u]-0.02,i/n), frameon=False)
+            ax.add_artist(box)
         layouts.append([layout,i/n])
 
     # Draw All the Connections between Nodes
@@ -67,28 +70,30 @@ def visualize_tree(scores,connections,labels = None, sigma = False):
         for i in range(len(lower_layout[0])):
             for j in range(len(upper_layout[0])):
                 alpha = float(connection[j][i])
-                plt.plot(
+                ax.plot(
                     (lower_layout[0][i],upper_layout[0][j]),
                     (lower_layout[1] + eps,upper_layout[1] - eps),
                     color = "gray", alpha = alpha
                     ) 
+    ax.tick_params(left = False, right = False , labelleft = False ,
+                labelbottom = False, bottom = False)
     
 eps = 1e-6; d = 132
 scores = [
-    torch.tensor([1,0,0]).clamp(eps,1-eps),
-    torch.tensor([0,0,0,1]).clamp(eps,1-eps)
+    torch.tensor([1,0.0,0.9]).clamp(eps,1-eps),
+    torch.tensor([0,0,0,0,0,0.9]).clamp(eps,1-eps)
     ]
 
 features = [
     torch.randn([3,d]),
-    torch.randn([4,d]),
+    torch.randn([5,d]),
     ]
 
 connections = [
     torch.tensor([
-        [1,1,0,0],
-        [0,0,1,0],
-        [0,0,0,1],
+        [1,1,0,0,0,0],
+        [0,0,1,0,0,1],
+        [0,0,0,1,1,0],
     ]).float()
 ]
 
@@ -103,14 +108,17 @@ print("parents:",q)
 
 o = learner.executor(q, **kwargs)
 o["end"].reverse()
-for s in o["end"]:print((torch.sigmoid(s)+0.5).int())
+for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))
 
 q = learner.executor.parse("subtree(scene())")
-print("subtrees",q)
+print("subtree",q)
 
 o = learner.executor(q, **kwargs)
 o["end"].reverse()
-for s in o["end"]:print((torch.sigmoid(s)+0.5).int())
+for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))
 
-visualize_tree(scores,connections)
-plt.show()
+#visualize_tree(scores,connections)
+#plt.show()
+
+# there is an $p1$ contains a $p2$
+# exist(filter(subtree(filter(scene(),p1)),p2))
