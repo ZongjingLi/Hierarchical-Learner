@@ -10,6 +10,7 @@ from utils import *
 class UnknownArgument(Exception):
     def __init__():super()
 
+
 class SceneLearner(nn.Module):
     def __init__(self,config):
         super().__init__()
@@ -39,6 +40,11 @@ class SceneLearner(nn.Module):
 
         # [Hierarchy Structure Network]
         self.scene_builder = nn.ModuleList([])
+    
+    def build_scene(features, scores = None):
+        if scores is None: scores = 1
+        scene_struct = {"scores":0,"features":0,"connections":0}
+        return scene_struct
 
     def _check_nan_gradient(self):
 
