@@ -51,12 +51,16 @@ class HierarchyBuilder(nn.Module):
         self.num_binary_predicates = num_binary_predicates
         self.graph_convs = GraphConvolution(input_dim,output_slots)
 
-    def forward(self, x, concept_builder):
+    def forward(self, x, executor):
         """
         input: 
             x: feature to agglomerate [B,N,D]
         """
         factored_features = x
+        """
+                executor.entailment(feature,
+            executor.get_concept_embedding(self.concept))
+        """
 
         # [Perform Convolution on Factored States]
         graph_conv_masks = self.graph_conv(factored_features)

@@ -4,6 +4,7 @@ import torch.nn as nn
 from models.nn import *
 from models.nn.box_registry import build_box_registry
 from models.percept import *
+from .hierarchy_net import *
 from .executor import *
 from utils import *
 
@@ -39,7 +40,8 @@ class SceneLearner(nn.Module):
         self.rep = config.concept_type
 
         # [Hierarchy Structure Network]
-        self.scene_builder = nn.ModuleList([])
+        self.scene_builder = nn.ModuleList([HierarchyBuilder(config, slot_num) \
+            for slot_num in config.hierarchy_construct])
     
     def build_scene(self,input_features):
         """
@@ -52,7 +54,7 @@ class SceneLearner(nn.Module):
 
         for builder in self.scene_builder:
             #input_features [B,N,D]
-            masks = builder(input_features, self.box_registry) # [B,M,N]
+            masks = builder(input_features, self.executor) # [B,M,N]
             # [Build Scene Hierarchy]
             scores = torch.max(masks, dim = -1).values # hierarchy scores # [B,M]
             features = torch.einsum("bmn,bnd",masks,input_features) # hierarchy features # [B,M,D]
