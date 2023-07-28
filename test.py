@@ -22,7 +22,6 @@ gt = inputs * 5 + 3
 
 outputs = model(inputs, flag = False)
 
-
 optim = torch.optim.Adam(model.parameters(), lr = 1e-1)
 
 epochs = 400
