@@ -50,7 +50,7 @@ parser.add_argument("--concept_projection", default = True)
 parser.add_argument("--concept_type",       default = "cone")
 parser.add_argument("--concept_dim",        default = 100)
 parser.add_argument("--object_dim",         default = 100)
-parser.add_argument("--temperature",        default = 0.5)
+parser.add_argument("--temperature",        default = 32.)
 
 # box concept methods
 parser.add_argument("--method",             default = "uniform")

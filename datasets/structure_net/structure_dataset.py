@@ -41,4 +41,7 @@ class StructureGroudingDataset(Dataset):
     def __len__(self):return 0
 
     def __getitem__(self, idx):
-        return idx
+        point_cloud = []
+        questions   = []
+        answers     = []
+        return {"point_cloud":point_cloud,"questions":questions,"answers":answers}

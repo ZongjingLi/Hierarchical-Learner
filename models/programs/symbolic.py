@@ -7,7 +7,8 @@ from .abstract_program import AbstractProgram
 from utils import copy_dict,apply,EPS
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-inf = torch.tensor(int(1e6)).to(device)
+inf = torch.tensor(int(1e8)).to(device)
+EPS = 1e-8
 
 class SymbolicProgram(AbstractProgram):
     def __init__(self, *args):
@@ -322,7 +323,7 @@ class Parents(SymbolicProgram):
         self.child, = args
 
     def __call__(self, executor):
-        child = self.child(executor); EPS = 1e-6
+        child = self.child(executor); 
         tree_logits = [score for score in child["end"]]
         connections = executor.kwargs["connections"]
         assert len(connections) + 1 == len(child["end"]),\
@@ -351,11 +352,10 @@ class  Subtree(SymbolicProgram):
 
         for i in range(len(tree_logits)-1,0,-1):
             current_scores = torch.sigmoid(tree_logits[i])
-            print(current_scores.shape, connections[i-1].shape)
             path_prob = torch.einsum("mn,m->n",connections[i - 1], current_scores)
 
             tree_logits[i - 1] = path_prob
             tree_logits[i - 1] = torch.log(tree_logits[i-1] / (1 - tree_logits[i-1]))
-        EPS = 1e-6
+        
         tree_logits[-1] = torch.log(torch.ones([len(tree_logits[-1])],device = device) * EPS)
         return {**child, "end": tree_logits}
