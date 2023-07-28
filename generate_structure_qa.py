@@ -3,6 +3,7 @@ import torch.nn as nn
 
 import matplotlib.pyplot as plt
 
+from visualize.visualize_pointcloud import *
 from config import *
 from utils import *
 
@@ -26,6 +27,9 @@ cat = "chair"
 pc_path = root + "/partnethiergeo/{}_geo/172.npz".format(cat)
 pc_data = np.load(pc_path)
 
+# [Point Cloud]
+pc = torch.tensor(pc_data["parts"][0])
+
 for name in pc_data.files:
     print(name,":", pc_data[name].shape)
 
@@ -34,5 +38,12 @@ hier_data = load_json(hier_path)
 for name in hier_data:
     print(name,":",0)
 
-for component in hier_data["children"]:
-    print(component)
+hierarchy = hier_data["children"]
+print("Hierarchy")
+pc_colors = torch.ones([1000,3]) * 0.5
+
+visualize_pointcloud(
+    [
+        (pc,pc_colors),]
+    )
+plt.show()
