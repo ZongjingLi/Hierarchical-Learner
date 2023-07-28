@@ -48,7 +48,7 @@ class CSQModule(nn.Module):
         super().__init__()
         concept_dim = config.concept_dim
         self.num_slots = num_slots
-        if config.conpcept_projection:
+        if config.concept_projection:
             self.feature2concept = nn.Linear(config.latent_dim, concept_dim)
         self.graph_conv = None
     
