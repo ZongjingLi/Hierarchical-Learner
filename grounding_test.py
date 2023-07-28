@@ -131,4 +131,39 @@ pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", args="")
 plt.figure(figsize=(8, 8))
 nx.draw(G, pos, node_size=20, alpha=0.5, node_color="blue", with_labels=False)
 plt.axis("equal")
-plt.show()
+#plt.show()
+
+B = 2
+features = torch.randn([B,10,100])
+scene = learner.build_scene(features)
+
+def load_scene(scene, k): 
+    scores = scene["scores"]; features = scene["features"]; connections = scene["connections"]
+    return [score[k] for score in scores], [feature[k] for feature in features], \
+        [connection[k] for connection in connections[1:]]
+
+#for score in scene["scores"]:print(score.shape)
+
+scores,features,connections = load_scene(scene, 1)
+
+kwargs = {"features":features,
+          "end":scores,
+          "connections":connections}
+
+"""
+executor
+"""
+
+q = learner.executor.parse("parents(scene())")
+print("parents:",q)
+
+o = learner.executor(q, **kwargs)
+o["end"].reverse()
+for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))
+
+q = learner.executor.parse("subtree(scene())")
+print("subtree",q)
+
+o = learner.executor(q, **kwargs)
+o["end"].reverse()
+for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))

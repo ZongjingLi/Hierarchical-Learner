@@ -26,7 +26,7 @@ class GraphConvolution(nn.Module):
 
     def forward(self, inputs, adj):
         B = inputs.shape[0]
-        print(inputs.shape, self.weight.unsqueeze(0).repeat(B,1,1).shape)
+
         support = torch.matmul(inputs, self.weight.unsqueeze(0).repeat(B,1,1))
         output = torch.matmul(adj, support)     
         if self.bias is not None:
@@ -41,29 +41,34 @@ class GraphConvolution(nn.Module):
 
 
 class HierarchyBuilder(nn.Module):
-    def __init__(self, config, output_slots):
+    def __init__(self, config, output_slots, nu = 8):
         super().__init__()
-        num_unary_predicates = 4
+        num_unary_predicates = nu
         num_binary_predicates = 0
-        spatial_feature_dim = 3
+        spatial_feature_dim = 0
         input_dim = num_unary_predicates + spatial_feature_dim
         self.num_unary_predicates = num_unary_predicates
         self.num_binary_predicates = num_binary_predicates
-        self.graph_convs = GraphConvolution(input_dim,output_slots)
+        self.graph_conv = GraphConvolution(input_dim,output_slots)
 
     def forward(self, x, executor):
         """
         input: 
             x: feature to agglomerate [B,N,D]
         """
-        factored_features = x
-        """
-                executor.entailment(feature,
-            executor.get_concept_embedding(self.concept))
-        """
+        B, N, D = x.shape
+        predicates = executor.concept_vocab
+
+
+        factored_features = [executor.entailment(
+            x,executor.get_concept_embedding(predicate)
+            ).unsqueeze(-1) for predicate in predicates]
+
+        factored_features = torch.cat(factored_features, dim = -1)
 
         # [Perform Convolution on Factored States]
-        graph_conv_masks = self.graph_conv(factored_features)
+        adjs = torch.ones([B, N, N])
+        graph_conv_masks = self.graph_conv(factored_features, adjs).permute([0,2,1])
 
         # [Build Connection Between Input Features and Conv Features]
         #graph_conv_masks = torch.einsum("bnd,bmd->bnm")

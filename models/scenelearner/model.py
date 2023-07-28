@@ -1,3 +1,4 @@
+from turtle import shape
 import torch
 import torch.nn as nn
 
@@ -56,15 +57,16 @@ class SceneLearner(nn.Module):
             #input_features [B,N,D]
             masks = builder(input_features, self.executor) # [B,M,N]
             # [Build Scene Hierarchy]
-            scores = torch.max(masks, dim = -1).values # hierarchy scores # [B,M]
-            features = torch.einsum("bmn,bnd",masks,input_features) # hierarchy features # [B,M,D]
+            score = torch.max(masks, dim = -1).values # hierarchy scores # [B,M]
+            #print(scores.shape, masks.shape, input_features.shape)
+            feature = torch.einsum("bmn,bnd->bmd",masks,input_features) # hierarchy features # [B,M,D]
 
             # [Build Scores, Features, and Connections]
-            scores.append(scores) # [B,M]
-            features.append(features) # [B,M,D]
+            scores.append(score) # [B,M]
+            features.append(feature) # [B,M,D]
             connections.append(masks) # [B,M,N]
 
-            input_features = features
+            input_features = feature
 
         scene_struct = {"scores":scores,"features":features,"connections":connections}
         return scene_struct

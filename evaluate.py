@@ -103,3 +103,4 @@ if evalargs.dataset in ["Objects3d"]:
 if evalargs.dataset in ["Sprites","Acherus","Toys","PTR"]:
     print("start the image domain training session.")
     #train_pointcloud(model, config, evalargs)
+

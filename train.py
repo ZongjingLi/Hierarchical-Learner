@@ -57,7 +57,10 @@ def log_imgs(imsize,pred_img,clusters,gt_img,writer,iter_):
     visualize_image_grid(cluster_imgs[batch_size,...], row = 1, save_name = "val_cluster")
     visualize_image_grid(pred_img.reshape(batch_size,imsize,imsize,3)[0,...], row = 1, save_name = "val_recon")
 
-
+def load_scene(scene, k): 
+    scores = scene["scores"]; features = scene["features"]; connections = scene["connections"]
+    return [score[k] for score in scores], [feature[k] for feature in features], \
+        [connection[k] for connection in connections[1:]]
 
 def train_pointcloud(train_model, config, args, phase = "1"):
     assert phase in ["0", "1", "2", "3", "4", "5",0,1,2,3,4,5],print("not a valid phase")
@@ -220,7 +223,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
         writer.add_scalar("epoch_loss", epoch_loss, epoch)
     print("\n\nExperiment {} : Training Completed.".format(args.name))
 
-weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":10.0,"chamfer":1.0,"equillibrium_loss":1.0}
+weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":100.0,"chamfer":1.0,"equillibrium_loss":1.0}
 
 argparser = argparse.ArgumentParser()
 # [general config of the training]
@@ -230,7 +233,7 @@ argparser.add_argument("--name",                    default = "KFT")
 argparser.add_argument("--epoch",                   default = 400 * 3)
 argparser.add_argument("--optimizer",               default = "Adam")
 argparser.add_argument("--lr",                      default = 1e-3)
-argparser.add_argument("--batch_size",              default = 1)
+argparser.add_argument("--batch_size",              default = 16)
 argparser.add_argument("--dataset",                 default = "toy")
 argparser.add_argument("--concept_type",            default = False)
 
