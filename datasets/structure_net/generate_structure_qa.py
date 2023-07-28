@@ -1,17 +1,17 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.pyplot as plt
-from visualize.visualize_pointcloud import *
-from config import *
-from utils import *
+
 import networkx as nx
 import os
 import random
+from tqdm import tqdm
 
 colors = [
     '#1f77b4',  # muted blue
@@ -26,8 +26,54 @@ colors = [
     '#17becf'   # blue-teal
 ]
 
+def hex2rgb(h):
+    return tuple(int(h.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+
+def rgb2hex(rgb):
+    return '#{0:02x}{1:02x}{2:02x}'.format(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+
 colors = [torch.tensor(hex2rgb(color))/255.0 for color in colors]
 color_names = ["red" for _ in range(10)]
+
+import json
+
+def load_json(path):
+    with open(path,'r') as f:
+        data = json.load(f)
+        return data
+
+def save_json(data,path):
+    '''input the diction data and save it'''
+    beta_file = json.dumps(data)
+    file = open(path,'w')
+    file.write(beta_file)
+    return True
+
+def visualize_pointcloud(input_pcs,name="pc"):
+    rang = 1.0; N = len(input_pcs)
+    num_rows = 3
+    fig = plt.figure("visualize",figsize=plt.figaspect(1/N), frameon = True)
+    for i in range(N):
+        ax = fig.add_subplot(1, N , 1 + i, projection='3d')
+        ax.set_zlim(-rang,rang);ax.set_xlim(-rang,rang);ax.set_ylim(-rang,rang)
+        # make the panes transparent
+        for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
+            axis.set_ticklabels([])
+            axis._axinfo['axisline']['linewidth'] = 1
+            axis._axinfo['axisline']['color'] = (0, 0, 0)
+            axis._axinfo['grid']['linewidth'] = 0.5
+            axis._axinfo['grid']['linestyle'] = "-"
+            axis._axinfo["grid"]['color'] =  (1,1,1,0)
+            axis._axinfo['tick']['inward_factor'] = 0.0
+            axis._axinfo['tick']['outward_factor'] = 0.0
+            axis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.set_axis_off()
+        #ax.view_init(elev = -80, azim = -90)
+        coords = input_pcs[i][0]
+        colors = input_pcs[i][1]
+        ax.scatter(coords[:,0],coords[:,1],coords[:,2], c = colors)
+    plt.savefig("outputs/{}.png".format(name))
+
 
 def find_outliers(pc):
     # Calculate mean distance from each point to every other point
@@ -133,31 +179,10 @@ def create_box(box_params):
     #
     return verts, faces
 
-
-root = config.dataset_root
-
-def generate(cat = "chair", idx = 172, pts_num = 2048):
-    pc_path = root + "/partnethiergeo/{}_geo/{}.npz".format(cat, idx)
-    pc_data = np.load(pc_path)
-
-    # [Point Cloud]
-    pc = torch.tensor(pc_data["parts"][0])
-
-    hier_path = root + "/partnethiergeo/{}_hier/{}.json".format(cat, idx)
-    hier_data = load_json(hier_path)
-
-    pc, rgbs = dfs_point_cloud(pc_data["parts"], get_leafs(hier_data))
-    valid_indices = random.sample(list(range(pc.shape[0])), pts_num)
-    pc = pc[valid_indices,:]
-    rgbs = rgbs[valid_indices,:]
-    
-    scene_tree = get_scene_tree(hier_data)
- 
-    return {"point_cloud":pc,"rgbs":rgbs}
+root = "/Users/melkor/Documents/datasets"
 
 def get_scene_tree(h):
     return 
-
     
 def get_leafs(h):
     nodes = []
@@ -206,6 +231,26 @@ def dfs_point_cloud(pc_data, nodes = None):
     rgbs = torch.cat(rgbs, dim = 0)
     return point_cloud, rgbs
 
+def generate_full(cat = "chair", idx = 172, pts_num = 2048):
+    pc_path = root + "/partnethiergeo/{}_geo/{}.npz".format(cat, idx)
+    pc_data = np.load(pc_path)
+
+    # [Point Cloud]
+    pc = torch.tensor(pc_data["parts"][0])
+
+    hier_path = root + "/partnethiergeo/{}_hier/{}.json".format(cat, idx)
+    hier_data = load_json(hier_path)
+
+    pc, rgbs = dfs_point_cloud(pc_data["parts"], get_leafs(hier_data))
+    valid_indices = random.sample(list(range(pc.shape[0])), pts_num)
+    pc = pc[valid_indices,:]
+    rgbs = rgbs[valid_indices,:]
+    
+    scene_tree = get_scene_tree(hier_data)
+    
+    return {"point_cloud":pc, "rgbs":rgbs,"scene_tree":scene_tree,"questions":questions,"answers":answers}
+
+
 def generate_structure(cat = "chair", idx = 176):
     pc_path = root + "/partnethiergeo/{}_geo/{}.npz".format(cat, idx)
     pc_data = np.load(pc_path)
@@ -219,7 +264,7 @@ def generate_structure(cat = "chair", idx = 176):
 
     scene_tree = nx.Graph()
     def build(h,root):
-        name = h["label"]
+        name = h["label"]+ "_" + np.random.choice([*"abcedfghijklmnopqrstuvwxyz"])
         scene_tree.add_node(name)
         scene_tree.add_edge(root, name)
         if "children" in h:
@@ -227,11 +272,80 @@ def generate_structure(cat = "chair", idx = 176):
                 build(child, name)
     build(hier_data, "root")
 
-    return {"point_cloud":pc, "rgbs":None,"scene_tree":scene_tree}
+    questions = {"geometry":[],"instance":[]}
+    answers = {"geometry":[],"instance":[]}
 
-#outputs = generate(idx = 176)
+    return {"point_cloud":pc, "rgbs":None,"scene_tree":scene_tree,"questions":questions,"answers":answers}
 
-outputs = generate_structure()
+#outputs = generate_color(idx = 176)
+
+import argparse
+
+genparser = argparse.ArgumentParser()
+genparser.add_argument("--mode",                default = "geo")
+genparser.add_argument("--category",            default = "chair")
+genparser.add_argument("--num_points",          default = 1000)
+genargs = genparser.parse_args()
+
+assert genargs.mode in ["geo","full"],print(genargs.mode)
+qadataset_dir = root + "/partnet_{}_qa/{}".format(genargs.mode,genargs.category)
+if not os.path.exists(qadataset_dir): os.makedirs(qadataset_dir)
+
+qadataset_dir_train = root + "/partnet_{}_qa/{}/train".format(genargs.mode,genargs.category)
+if not os.path.exists(qadataset_dir_train): os.makedirs(qadataset_dir_train)
+qadataset_dir_train = root + "/partnet_{}_qa/{}/train/point_cloud".format(genargs.mode,genargs.category)
+if not os.path.exists(qadataset_dir_train): os.makedirs(qadataset_dir_train)
+qadataset_dir_train = root + "/partnet_{}_qa/{}/train/qa".format(genargs.mode,genargs.category)
+if not os.path.exists(qadataset_dir_train): os.makedirs(qadataset_dir_train)
+
+qadataset_dir_test = root + "/partnet_{}_qa/{}/test".format(genargs.mode,genargs.category)
+if not os.path.exists(qadataset_dir_test): os.makedirs(qadataset_dir_test)
+qadataset_dir_test = root + "/partnet_{}_qa/{}/test/point_cloud".format(genargs.mode,genargs.category)
+if not os.path.exists(qadataset_dir_test): os.makedirs(qadataset_dir_test)
+qadataset_dir_test = root + "/partnet_{}_qa/{}/test/qa".format(genargs.mode,genargs.category)
+if not os.path.exists(qadataset_dir_test): os.makedirs(qadataset_dir_test)
+
+print("Generating: Category:{} Mode: {}".format(genargs.category, genargs.mode))
+if genargs.mode == "geo":
+    train_split_path = root + "/partnethiergeo/{}_hier/train.txt".format(genargs.category)
+    with open(train_split_path,"r") as train_split:
+        for index in tqdm(train_split):
+            index = int(index.strip())
+            outputs = generate_structure(cat = genargs.category, idx = index)
+            point_cloud =   outputs["point_cloud"]
+            questions   =   outputs["questions"]
+            answers     =   outputs["answers"]
+            save_json(questions,root + "/partnet_{}_qa/{}/train/qa/{}.json".\
+                format(genargs.mode,genargs.category,index))
+            save_json(answers,root + "/partnet_{}_qa/{}/train/qa/{}.json".\
+                format(genargs.mode,genargs.category,index))
+            np.save(root + "/partnet_{}_qa/{}/train/point_cloud/{}.npy".format(genargs.mode,genargs.category,index)\
+                ,np.array(point_cloud))
+    
+    test_split_path = root + "/partnethiergeo/{}_hier/test.txt".format(genargs.category)
+    with open(test_split_path,"r") as test_split:
+        for index in tqdm(test_split):
+            index = int(index.strip())
+            outputs = generate_structure(cat = genargs.category, idx = index)
+            point_cloud =   outputs["point_cloud"]
+            questions   =   outputs["questions"]
+            answers     =   outputs["answers"]
+            save_json(questions,root + "/partnet_{}_qa/{}/test/qa/{}.json".\
+                format(genargs.mode,genargs.category,index))
+            save_json(answers,root + "/partnet_{}_qa/{}/test/qa/{}.json".\
+                format(genargs.mode,genargs.category,index))
+            np.save(root + "/partnet_{}_qa/{}/test/point_cloud/{}.npy".format(genargs.mode,genargs.category,index)\
+                ,np.array(point_cloud))
+
+if genargs.mode == "full":
+    pass
+
+print("Generation Completed: Category:{} Mode: {}".format(genargs.category, genargs.mode))
+
+"""
+"""
+
+outputs = generate_structure(idx = 177)
 st = outputs["scene_tree"]
 nx.draw_networkx(st)
 plt.show()
