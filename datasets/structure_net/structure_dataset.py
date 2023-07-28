@@ -31,10 +31,12 @@ class StructureDataset(Dataset):
         return {"point_cloud":pc_data["parts"][0]}, pc_data["parts"][0]
 
 class StructureGroudingDataset(Dataset):
-    def __init__(self, config):
+    def __init__(self, config, phase = "1"):
         super().__init__()
         root = config.root
-        path = root + "/partnetheirgeo"
+        path = root + "/partnet_{}_qa"
+        cats = ["vase"]
+        self.valid_questions = ["geometry"]
     
     def __len__(self):return 0
 

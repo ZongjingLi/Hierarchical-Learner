@@ -345,7 +345,8 @@ print("Generation Completed: Category:{} Mode: {}".format(genargs.category, gena
 """
 """
 
-outputs = generate_structure(idx = 177)
+outputs = generate_structure(cat = "vase", idx = 3390)
+outputs = generate_structure(cat = "table", idx = 18142)
 st = outputs["scene_tree"]
 nx.draw_networkx(st)
 plt.show()
