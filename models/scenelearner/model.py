@@ -43,6 +43,7 @@ class SceneLearner(nn.Module):
         # [Hierarchy Structure Network]
         self.scene_builder = nn.ModuleList([HierarchyBuilder(config, slot_num) \
             for slot_num in config.hierarchy_construct])
+        self.feature2concept = nn.Linear(131,config.concept_dim)
     
     def build_scene(self,input_features):
         """

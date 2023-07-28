@@ -7,7 +7,7 @@ from .abstract_program import AbstractProgram
 from utils import copy_dict,apply,EPS
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-inf = torch.tensor(int(1e9)).to(device)
+inf = torch.tensor(int(1e6)).to(device)
 
 class SymbolicProgram(AbstractProgram):
     def __init__(self, *args):
@@ -135,8 +135,9 @@ class Filter(SymbolicProgram):
 
     def __call__(self, executor):
         child = self.child(executor)
-        tree_masks = [ torch.min(child["end"],executor.entailment(feature,
-            executor.get_concept_embedding(self.concept))) for feature in executor.kwargs["features"]
+        tree_masks = [ torch.min(child["end"][i],executor.entailment(feature,
+            executor.get_concept_embedding(self.concept))) \
+            for i in range(len(child["end"])) for feature in executor.kwargs["features"][i] 
         ]
 
         #query_object = mask[..., 0].max(-1).indices
@@ -311,6 +312,7 @@ class Exist(SymbolicProgram):
         max_logit = -inf
         for level in child["end"]:
             new_logit, query_object = level.max(-1)
+            new_logit = new_logit.clamp(-inf,inf)
             max_logit = torch.max(max_logit, new_logit)
         return {**child, "end": max_logit}
 
@@ -349,6 +351,7 @@ class  Subtree(SymbolicProgram):
 
         for i in range(len(tree_logits)-1,0,-1):
             current_scores = torch.sigmoid(tree_logits[i])
+            print(current_scores.shape, connections[i-1].shape)
             path_prob = torch.einsum("mn,m->n",connections[i - 1], current_scores)
 
             tree_logits[i - 1] = path_prob

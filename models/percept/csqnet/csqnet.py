@@ -75,7 +75,8 @@ class CSQNet(nn.Module):
         self.csq_modules = [CSQModule(config, num_slots) for num_slots in construct]
         
         if config.concept_projection:
-            self.feature2concept = nn.Linear(config.latent_dim, concept_dim) # Deprecated
+            self.feature2concept = nn.Linear(config.latent_dim, concept_dim//2) # Deprecated
+        self.scaling = 1.0
     
 
 
@@ -87,7 +88,6 @@ class CSQNet(nn.Module):
 
         f_att = self.base_encoder(enc_in, return_att=True)
         gc, attention = f_att
-
 
         pose_locals = evaluate_pose(pc , attention)
         kps = pose_locals.squeeze(-1)
@@ -108,10 +108,9 @@ class CSQNet(nn.Module):
         scene_construct = [{"scores":1,"features":1,"masks":1,"raw_features":0,"match":False}]
 
         # [Construct the Hierarchical Representation]
-        for csqnet in self.csq_modules:
-            csqnet(scene_construct)
 
 
         losses = {"chamfer":chamfer_loss,"reconstruction":0.0,"localization":loc_loss,"equillibrium_loss":equi_loss}
-        outputs = {"loss":losses,"recon_pc":y,"masks":attention,"abstract_scene":scene_construct}
+        outputs = {"loss":losses,"recon_pc":y,"masks":attention,"abstract_scene":scene_construct,\
+            "features":gc.permute(0,2,1,3).squeeze(-1),"positions":pose_locals.permute(0,2,1,3).squeeze(-1)}
         return outputs
