@@ -63,6 +63,7 @@ def load_scene(scene, k):
         [connection[k] for connection in connections[1:]]
 
 def train_pointcloud(train_model, config, args, phase = "1"):
+    B = args.batch_size
     assert phase in ["0", "1", "2", "3", "4", "5",0,1,2,3,4,5],print("not a valid phase")
     query = True if args.training_mode in ["joint", "query"] else False
     print("\nstart the experiment: {} query:[{}]".format(args.name,query))
@@ -120,56 +121,41 @@ def train_pointcloud(train_model, config, args, phase = "1"):
             # [Language Loss]
             language_loss = 0
             if query:
-                for question in sample["question"]:
-                    for b in range(len(question["program"])):
-                        program = question["program"][b] # string program
-                        answer  = question["answer"][b]  # string answer
+                features,masks,positions = outputs["features"],outputs["masks"],outputs["positions"] 
 
-                        abstract_scene  = outputs["abstract_scene"]
-                        top_level_scene = abstract_scene[-1]
+                qa_programs = sample["programs"]
+                answers = sample["answers"]
+                scene = train_model.build_scene(features)
+            
+                for b in range(B):
+                    scores,features,connections = load_scene(scene, b)
 
-                        working_scene = [top_level_scene]
-                        
-                        scores   = scores = outputs["abstract_scene"][-1]["scores"]
-                        EPS = 1e-5
-                        scores   = torch.clamp(scores, min = EPS, max = 1 - EPS).reshape([-1])
-                        #scores = scores.unsqueeze(0)
+                    kwargs = {"features":features,
+                    "end":scores,
+                    "connections":connections}
 
+                    for i,q in enumerate(qa_programs):
+                        answer = answers[i]
+                        q = train_model.executor.parse("subtree(scene())")
 
-                        features = top_level_scene["features"][b].reshape([scores.shape[0],-1])
-
-
-                        edge = 1e-5
-                        if config.concept_type == "box":
-                            features = torch.cat([features,edge * torch.ones(features.shape)],-1)#.unsqueeze(0)
-
-                        kwargs = {"features":features,
-                                  "end":scores }
-
-                        q = train_model.executor.parse(program)
-                        
                         o = train_model.executor(q, **kwargs)
-                        #print("Batch:{}".format(b),q,o["end"],answer)
+                        o["end"].reverse()
+
+                        q = train_model.executor.parse("exist(subtree(scene()) )")
+
+                        o = train_model.executor(q, **kwargs)
+
                         if answer in ["True","False"]:answer = {"True":"yes,","False":"no"}[answer]
                         if answer in ["1","2","3","4","5"]:answer = num2word(int(answer))
 
                         if answer in numbers:
                             int_num = torch.tensor(numbers.index(answer)).float().to(args.device)
-                            language_loss += 0 #+F.mse_loss(int_num + 1,o["end"])
-   
-                            if itrs % args.checkpoint_itrs == 0:
-                                #print(q,answer)
-                                visualize_scores(scores.reshape([args.batch_size,-1,1]).cpu().detach())
-                                answer_distribution_num(o["end"].cpu().detach().numpy(),1+int_num.cpu().detach().numpy())
+                            language_loss += +F.mse_loss(int_num + 1,o["end"])
                         if answer in yes_or_no:
                             if answer == "yes":language_loss -= torch.log(torch.sigmoid(o["end"]))
                             else:language_loss -= torch.log(1 - torch.sigmoid(o["end"]))
         
-                            if itrs % args.checkpoint_itrs == 0:
-                                #print(q,answer)
-                                #print(torch.sigmoid(o["end"]).cpu().detach().numpy())
-                                visualize_scores(scores.reshape([args.batch_size,-1,1]).cpu().detach())
-                                answer_distribution_binary(torch.sigmoid(o["end"]).cpu().detach().numpy())
+                        #language_loss += (1 + torch.sigmoid( (o["end"] + g) )/r)
 
             # [calculate the working loss]
             working_loss = perception_loss * alpha + language_loss * beta

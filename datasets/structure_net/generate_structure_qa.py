@@ -274,8 +274,12 @@ def generate_structure(cat = "chair", idx = 176):
 
     questions = {"geometry":[],"instance":[]}
     answers = {"geometry":[],"instance":[]}
+    questions_answers = {"all":[
+        {"type":"geometry","question":"is there any object in the scene?","answer":"True","program":"exist(subtree(scene()))"},
+    ]}
 
-    return {"point_cloud":pc, "rgbs":None,"scene_tree":scene_tree,"questions":questions,"answers":answers}
+    return {"point_cloud":pc, "rgbs":None,"scene_tree":scene_tree,"questions":questions,"answers":answers,\
+        "questions_answers":questions_answers}
 
 #outputs = generate_color(idx = 176)
 
@@ -297,12 +301,16 @@ qadataset_dir_train = root + "/partnet_{}_qa/{}/train/point_cloud".format(genarg
 if not os.path.exists(qadataset_dir_train): os.makedirs(qadataset_dir_train)
 qadataset_dir_train = root + "/partnet_{}_qa/{}/train/qa".format(genargs.mode,genargs.category)
 if not os.path.exists(qadataset_dir_train): os.makedirs(qadataset_dir_train)
+qadataset_dir_train = root + "/partnet_{}_qa/{}/train/annotations".format(genargs.mode,genargs.category)
+if not os.path.exists(qadataset_dir_train): os.makedirs(qadataset_dir_train)
 
 qadataset_dir_test = root + "/partnet_{}_qa/{}/test".format(genargs.mode,genargs.category)
 if not os.path.exists(qadataset_dir_test): os.makedirs(qadataset_dir_test)
 qadataset_dir_test = root + "/partnet_{}_qa/{}/test/point_cloud".format(genargs.mode,genargs.category)
 if not os.path.exists(qadataset_dir_test): os.makedirs(qadataset_dir_test)
 qadataset_dir_test = root + "/partnet_{}_qa/{}/test/qa".format(genargs.mode,genargs.category)
+if not os.path.exists(qadataset_dir_test): os.makedirs(qadataset_dir_test)
+qadataset_dir_test = root + "/partnet_{}_qa/{}/test/annotations".format(genargs.mode,genargs.category)
 if not os.path.exists(qadataset_dir_test): os.makedirs(qadataset_dir_test)
 
 print("Generating: Category:{} Mode: {}".format(genargs.category, genargs.mode))
@@ -313,14 +321,15 @@ if genargs.mode == "geo":
             index = int(index.strip())
             outputs = generate_structure(cat = genargs.category, idx = index)
             point_cloud =   outputs["point_cloud"]
-            questions   =   outputs["questions"]
-            answers     =   outputs["answers"]
-            save_json(questions,root + "/partnet_{}_qa/{}/train/qa/{}.json".\
+            questions_answers   =   outputs["questions_answers"]
+            scene_tree  =   outputs["scene_tree"]
+            save_json(questions_answers,root + "/partnet_{}_qa/{}/train/qa/{}.json".\
                 format(genargs.mode,genargs.category,index))
-            save_json(answers,root + "/partnet_{}_qa/{}/train/qa/{}.json".\
-                format(genargs.mode,genargs.category,index))
+
             np.save(root + "/partnet_{}_qa/{}/train/point_cloud/{}.npy".format(genargs.mode,genargs.category,index)\
                 ,np.array(point_cloud))
+            nx.write_gpickle(scene_tree,
+            root + "/partnet_{}_qa/{}/train/annotations/{}.pickle".format(genargs.mode,genargs.category,index))
     
     test_split_path = root + "/partnethiergeo/{}_hier/test.txt".format(genargs.category)
     with open(test_split_path,"r") as test_split:
@@ -336,6 +345,9 @@ if genargs.mode == "geo":
                 format(genargs.mode,genargs.category,index))
             np.save(root + "/partnet_{}_qa/{}/test/point_cloud/{}.npy".format(genargs.mode,genargs.category,index)\
                 ,np.array(point_cloud))
+            nx.write_gpickle(scene_tree,
+            root + "/partnet_{}_qa/{}/test/annotations/{}.pickle".format(genargs.mode,genargs.category,index))
+    
 
 if genargs.mode == "full":
     pass
