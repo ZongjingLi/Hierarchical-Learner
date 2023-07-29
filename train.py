@@ -73,7 +73,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
         train_dataset= Objects3dDataset(config, sidelength = 128, stage = int(phase))
     if args.dataset == "StructureNet":
         if phase in ["0","1"]:
-            train_dataset = StructureDataset(config)
+            train_dataset = StructureDataset(config, category = "vase")
         if phase in ["2","3","4"]:
             train_dataset = StructureGroudingDataset(config)
 
@@ -223,7 +223,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
         writer.add_scalar("epoch_loss", epoch_loss, epoch)
     print("\n\nExperiment {} : Training Completed.".format(args.name))
 
-weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":100.0,"chamfer":1.0,"equillibrium_loss":1.0}
+weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":1.0,"chamfer":1.0,"equillibrium_loss":1.0}
 
 argparser = argparse.ArgumentParser()
 # [general config of the training]
@@ -257,7 +257,7 @@ argparser.add_argument("--effective_level",         default = 1)
 
 # [checkpoint location and savings]
 argparser.add_argument("--checkpoint_dir",          default = False)
-argparser.add_argument("--checkpoint_itrs",         default = 10)
+argparser.add_argument("--checkpoint_itrs",         default = 1000)
 argparser.add_argument("--pretrain_perception",     default = False)
 
 args = argparser.parse_args()

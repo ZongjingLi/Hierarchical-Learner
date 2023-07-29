@@ -282,12 +282,12 @@ def generate_structure(cat = "chair", idx = 176):
 import argparse
 
 genparser = argparse.ArgumentParser()
-genparser.add_argument("--mode",                default = "geo")
+genparser.add_argument("--mode",                default = "Nope")
 genparser.add_argument("--category",            default = "chair")
 genparser.add_argument("--num_points",          default = 1000)
 genargs = genparser.parse_args()
 
-assert genargs.mode in ["geo","full"],print(genargs.mode)
+#assert genargs.mode in ["geo","full"],print(genargs.mode)
 qadataset_dir = root + "/partnet_{}_qa/{}".format(genargs.mode,genargs.category)
 if not os.path.exists(qadataset_dir): os.makedirs(qadataset_dir)
 
@@ -349,8 +349,6 @@ outputs = generate_structure(cat = "vase", idx = 4167)
 #outputs = generate_structure(cat = "table", idx = 18142)
 st = outputs["scene_tree"]
 nx.draw_networkx(st)
-plt.show()
-
 plt.show()
 
 if outputs["rgbs"] is None: outputs["rgbs"] = .5 * torch.ones([outputs["point_cloud"].shape[0],3] )
