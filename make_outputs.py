@@ -53,8 +53,8 @@ if visconfig.model in ["csq_net"]:
     plt.show()
     
     masks = torch.tensor(np.load("outputs/masks.npy")) 
-    print(masks.sum(1))
-    print(masks.max(dim = 1).values)
+    #print(masks.sum(1))
+    #print(masks.max(dim = 1).values)
     vis_pts(pc.permute(1,0).unsqueeze(0),masks.permute(1,0).unsqueeze(0))
     plt.show()
 
