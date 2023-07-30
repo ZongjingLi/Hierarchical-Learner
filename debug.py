@@ -1,11 +1,17 @@
 from config     import *
+from legacy import freeze_parameters
 from models     import *
 from datasets   import *
+
+import networkx as nx
+
+from visualize.visualize_pointcloud import vis_pts
+from visualize.visualize_pointcloud import visualize_pointcloud
 
 # [Create a Dataset]
 B = 1
 dataset = StructureGroundingDataset(config, category="vase", split = "train")
-dataloader = DataLoader(dataset, batch_size = B)
+dataloader = DataLoader(dataset, batch_size = B, shuffle = True)
 
 # [Get A Sample Data]
 for sample in dataloader:
@@ -25,6 +31,7 @@ def load_scene(scene, k):
 
 
 learner = SceneLearner(config)
+learner.load_state_dict(torch.load("checkpoints/KFT_3d_perception_structure_csqnet_phase0_vase.pth",map_location = "cpu"))
 optimizer = torch.optim.RMSprop(learner.parameters(), lr = 1e-4)
 
 print(sample["programs"])
@@ -33,12 +40,40 @@ print(sample["questions"])
 
 print(sample["answers"])
 
+# plot the scene tree level
+scene_tree_path = sample["scene_tree"][-1]
+scene_tree = nx.read_gpickle(scene_tree_path)
+plt.figure("scene tree")
+nx.draw_networkx(scene_tree)
+
+# plot the point cloud structure
+outputs = learner.scene_perception(sample)
+point_cloud = sample["point_cloud"][0]
+masks = 0
+visualize_pointcloud([
+    (point_cloud, torch.ones([1000,1]))
+])
+
+vis_pts(point_cloud.permute(1,0).unsqueeze(0),masks.permute(1,0).unsqueeze(0))
+
+plt.show()
+
+freeze_parameters(learner.scene_perception)
+
+visualize = True
 for epoch in range(10000):
     g = -0.5; r = 0.3
     outputs = learner.scene_perception(sample)
 
-
     features,masks,positions = outputs["features"],outputs["masks"],outputs["positions"] 
+
+    if visualize and epoch == 0:
+        recon_pc = outputs["recon_pc"][0]
+        point_cloud = sample["point_cloud"][0]
+        masks = outputs["masks"][0]
+        np.save("outputs/recon_point_cloud.npy",np.array(recon_pc.cpu().detach()))
+        np.save("outputs/point_cloud.npy",np.array(point_cloud.cpu().detach()))
+        np.save("outputs/masks.npy",np.array(masks.cpu().detach()))
 
 
     features = learner.feature2concept(features)
