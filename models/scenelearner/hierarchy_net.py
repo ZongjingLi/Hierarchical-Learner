@@ -41,7 +41,7 @@ class GraphConvolution(nn.Module):
 
 
 class HierarchyBuilder(nn.Module):
-    def __init__(self, config, output_slots, nu = 8):
+    def __init__(self, config, output_slots, nu = 11):
         super().__init__()
         num_unary_predicates = nu
         num_binary_predicates = 0
@@ -58,7 +58,7 @@ class HierarchyBuilder(nn.Module):
         """
         B, N, D = x.shape
         predicates = executor.concept_vocab
-
+   
 
         factored_features = [executor.entailment(
             x,executor.get_concept_embedding(predicate)

@@ -63,9 +63,9 @@ def load_scene(scene, k):
         [connection[k] for connection in connections[1:]]
 
 def train_pointcloud(train_model, config, args, phase = "1"):
-    B = args.batch_size
+    B = int(args.batch_size)
     assert phase in ["0", "1", "2", "3", "4", "5",0,1,2,3,4,5],print("not a valid phase")
-    query = True if not args.training_mode in ["0",0] else False
+    query = False if args.phase in ["0",0] else False
     print("\nstart the experiment: {} query:[{}]".format(args.name,query))
     print("experiment config: \nepoch: {} \nbatch: {} samples \nlr: {}\n".format(args.epoch,args.batch_size,args.lr))
 
@@ -78,8 +78,9 @@ def train_pointcloud(train_model, config, args, phase = "1"):
         if phase in ["1","2","3","4"]:
             train_dataset = StructureGroundingDataset(config, category = args.category, split = "train", phase = "1")
     
-    train_dataset = StructureGroundingDataset(config, category="vase", split = "train")
+    #train_dataset = StructureGroundingDataset(config, category="vase", split = "train")
     dataloader = DataLoader(train_dataset, batch_size = int(args.batch_size), shuffle = args.shuffle)
+
 
     # [joint training of perception and language]
     alpha = args.alpha
@@ -111,7 +112,6 @@ def train_pointcloud(train_model, config, args, phase = "1"):
         epoch_loss = 0
         for sample in dataloader:
             sample, gt = sample
-            break;
             # [perception module training]
 
             outputs = model.scene_perception(sample)
@@ -130,7 +130,17 @@ def train_pointcloud(train_model, config, args, phase = "1"):
 
                 qa_programs = sample["programs"]
                 answers = sample["answers"]
+
+                features = train_model.feature2concept(features)
+                if config.concept_type == "box":
+
+                    features = torch.cat([
+                        features, 
+                        EPS * torch.ones(B,features.shape[1],config.concept_dim)\
+                        ],dim = -1)
+  
                 scene = train_model.build_scene(features)
+
             
                 for b in range(B):
                     scores,features,connections = load_scene(scene, b)
@@ -140,26 +150,24 @@ def train_pointcloud(train_model, config, args, phase = "1"):
                     "connections":connections}
 
                     for i,q in enumerate(qa_programs):
-                        answer = answers[i]
-                        q = train_model.executor.parse("subtree(scene())")
+                        answer = answers[i][b]
 
+                        q = train_model.executor.parse(q[0])
+
+                        
                         o = train_model.executor(q, **kwargs)
-                        o["end"].reverse()
-
-                        q = train_model.executor.parse("exist(subtree(scene()) )")
-
-                        o = train_model.executor(q, **kwargs)
+                        
 
                         if answer in ["True","False"]:answer = {"True":"yes,","False":"no"}[answer]
                         if answer in ["1","2","3","4","5"]:answer = num2word(int(answer))
-
+                        
                         if answer in numbers:
                             int_num = torch.tensor(numbers.index(answer)).float().to(args.device)
                             language_loss += +F.mse_loss(int_num + 1,o["end"])
                         if answer in yes_or_no:
                             if answer == "yes":language_loss -= torch.log(torch.sigmoid(o["end"]))
                             else:language_loss -= torch.log(1 - torch.sigmoid(o["end"]))
-        
+
                         #language_loss += (1 + torch.sigmoid( (o["end"] + g) )/r)
 
             # [calculate the working loss]
@@ -250,7 +258,7 @@ argparser.add_argument("--effective_level",         default = 1)
 
 # [checkpoint location and savings]
 argparser.add_argument("--checkpoint_dir",          default = False)
-argparser.add_argument("--checkpoint_itrs",         default = 1000)
+argparser.add_argument("--checkpoint_itrs",         default = 10)
 argparser.add_argument("--pretrain_perception",     default = False)
 
 args = argparser.parse_args()

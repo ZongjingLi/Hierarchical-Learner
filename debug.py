@@ -115,7 +115,7 @@ for epoch in range(10000):
             #for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))
 
             #q = learner.executor.parse("exist(filter(subtree(scene()),chair ))")
-            q = learner.executor.parse("exist(subtree(scene()) )")
+            q = learner.executor.parse("exist(filter( subtree(scene()) ,body) )")
 
             o = learner.executor(q, **kwargs)
             #print(o["end"])

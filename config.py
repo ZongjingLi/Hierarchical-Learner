@@ -18,6 +18,7 @@ parser.add_argument("--dataset_root",       default = "/Users/melkor/Documents/d
 parser.add_argument("--device",             default = device)
 parser.add_argument("--name",               default = "SceneGraphLearner")
 parser.add_argument("--domain",             default = "structure")
+parser.add_argument("--category",           default = ["vase"])
 
 # setup the perception module
 parser.add_argument("--perception",         default = "valkyr")
@@ -61,7 +62,7 @@ parser.add_argument("--temperature",        default = 32.)
 parser.add_argument("--method",             default = "uniform")
 parser.add_argument("--offset",             default = [-.25, .25])
 parser.add_argument("--center",             default =[.0, .0])
-parser.add_argument("--entries",            default = 10)
+parser.add_argument("--entries",            default = 32 * 2)
 parser.add_argument("--translator",         default = translator)
 
 

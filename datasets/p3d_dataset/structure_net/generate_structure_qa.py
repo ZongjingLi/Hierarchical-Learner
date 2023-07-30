@@ -288,7 +288,7 @@ def generate_structure(cat = "chair", idx = 176):
 
     # [Build Question Ansering Pairs] build category labels in the scene
     scene_labels = [];  build_labels(hier_data,scene_labels)
-    all_labels = ["pot","body","container","containing_things","liquid_or_soil"\
+    all_labels = ["pot","body","container","containing_things","liquid_or_soil",
                 "plant","other","lid","base","foot_base","foot"]
     qa_pairs = []
     # Existence Questions

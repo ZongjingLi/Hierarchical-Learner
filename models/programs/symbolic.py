@@ -136,10 +136,20 @@ class Filter(SymbolicProgram):
 
     def __call__(self, executor):
         child = self.child(executor)
-        tree_masks = [ torch.min(child["end"][i],executor.entailment(feature,
-            executor.get_concept_embedding(self.concept))) \
-            for i in range(len(child["end"])) for feature in executor.kwargs["features"][i] 
-        ]
+        tree_masks = [ ]
+
+        for i in range(len(child["end"])):
+            level_mask = []
+            #print(executor.kwargs["features"][i].shape)
+            #for feature in executor.kwargs["features"][i]:
+            features = executor.kwargs["features"][i]
+            mask_value = torch.min(child["end"][i],executor.entailment(features,
+                executor.get_concept_embedding(self.concept)))
+            level_mask.append(mask_value)
+
+            tree_masks.append(torch.cat(level_mask, dim = -1))
+
+    
 
         #query_object = mask[..., 0].max(-1).indices
         #print(filter_logit)
@@ -345,13 +355,16 @@ class  Subtree(SymbolicProgram):
 
     def __call__(self, executor):
         child = self.child(executor)
-        tree_logits = [score for score in child["end"]]
+        tree_logits = child["end"]
         connections = executor.kwargs["connections"]
+        tree_logits = [score for score in child["end"]]
+        #print(tree_logits)
         assert len(connections) + 1 == len(child["end"]),\
             print("Invalid Scene Connection Detected: scene:{} connection:{}".format(len(child["end"]),len(connections)))
 
         for i in range(len(tree_logits)-1,0,-1):
             current_scores = torch.sigmoid(tree_logits[i])
+
             path_prob = torch.einsum("mn,m->n",connections[i - 1], current_scores)
 
             tree_logits[i - 1] = path_prob
