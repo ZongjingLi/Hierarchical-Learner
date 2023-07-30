@@ -5,6 +5,10 @@ from models import *
 translator = {"scene":Scene,"exist":Exist,"filter":Filter,"union":Union,"unique":Unique,"count":Count,
               "parents":Parents,"subtree":Subtree}
 
+LOCAL = True
+
+root_path = "/Users/melkor/Documents/GitHub/Hierarchical-Learner" if LOCAL else ""
+
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 parser = argparse.ArgumentParser()
@@ -13,7 +17,7 @@ parser.add_argument("--root",               default = "root")
 parser.add_argument("--dataset_root",       default = "/Users/melkor/Documents/datasets")
 parser.add_argument("--device",             default = device)
 parser.add_argument("--name",               default = "SceneGraphLearner")
-parser.add_argument("--domain",             default = "toy")
+parser.add_argument("--domain",             default = root_path)
 
 # setup the perception module
 parser.add_argument("--perception",         default = "valkyr")
