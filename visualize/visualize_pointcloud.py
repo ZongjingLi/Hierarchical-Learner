@@ -32,25 +32,25 @@ def vis_pts_att(pts, label_map, fn="outputs/temp.png", marker=".", alpha=0.9):
         plt.axis("off")
     elif pts.shape[1] == 3:
         TH = 0.7
-        fig = plt.figure("part visualization")
-        ax = fig.add_subplot(111, projection="3d")
-        ax.set_zlim(-TH,TH)
-        ax.set_xlim(-TH,TH)
-        ax.set_ylim(-TH,TH)
+        fig_masks = plt.figure("part visualization")
+        ax_masks = fig_masks.add_subplot(111, projection="3d")
+        ax_masks.set_zlim(-TH,TH)
+        ax_masks.set_xlim(-TH,TH)
+        ax_masks.set_ylim(-TH,TH)
         xs = pts[:, 0]
         ys = pts[:, 1]
         zs = pts[:, 2]
         if label_map is not None:
-            ax.scatter(xs, ys, zs, c=label_map, cmap="jet", marker=marker, alpha=alpha)
+            ax_masks.scatter(xs, ys, zs, c=label_map, cmap="jet", marker=marker, alpha=alpha)
         else:
-            ax.scatter(xs, ys, zs, marker=marker, alpha=alpha, edgecolor="none")
-        ax.view_init(elev = 100, azim = -120)
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
-        ax.set_zticklabels([])
+            ax_masks.scatter(xs, ys, zs, marker=marker, alpha=alpha, edgecolor="none")
+        ax_masks.view_init(elev = 100, azim = -120)
+        ax_masks.set_xticklabels([])
+        ax_masks.set_yticklabels([])
+        ax_masks.set_zticklabels([])
 
 
-        for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
+        for axis in [ax_masks.xaxis, ax_masks.yaxis, ax_masks.zaxis]:
             axis.set_ticklabels([])
             axis._axinfo['axisline']['linewidth'] = 1
             axis._axinfo['axisline']['color'] = (0, 0, 0)
@@ -60,7 +60,7 @@ def vis_pts_att(pts, label_map, fn="outputs/temp.png", marker=".", alpha=0.9):
             axis._axinfo['tick']['inward_factor'] = 0.0
             axis._axinfo['tick']['outward_factor'] = 0.0
             axis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-        ax.set_axis_off()
+        ax_masks.set_axis_off()
 
     plt.savefig(
         fn,

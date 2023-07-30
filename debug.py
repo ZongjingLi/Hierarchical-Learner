@@ -8,7 +8,7 @@ import networkx as nx
 
 from visualize.visualize_pointcloud import vis_pts
 from visualize.visualize_pointcloud import visualize_pointcloud
-from datasets.structure_net.generate_structure_qa import dfs_point_cloud, get_leafs
+from datasets.p3d_dataset.structure_net.generate_structure_qa import dfs_point_cloud, get_leafs
 
 # [Create a Dataset]
 B = 1
@@ -42,11 +42,6 @@ print(sample["questions"])
 
 print(sample["answers"])
 
-# plot the scene tree level
-scene_tree_path = sample["scene_tree"][-1]
-scene_tree = nx.read_gpickle(scene_tree_path)
-plt.figure("scene tree")
-nx.draw_networkx(scene_tree)
 
 # plot the point cloud structure
 outputs = learner.scene_perception(sample)
@@ -71,7 +66,13 @@ visualize_pointcloud([
     (pts, rgbs)
 ])
 
-plt.show()
+# plot the scene tree level
+scene_tree_path = sample["scene_tree"][-1]
+scene_tree = nx.read_gpickle(scene_tree_path)
+plt.figure("scene tree")
+nx.draw_networkx(scene_tree)
+
+#plt.show()
 
 freeze_parameters(learner.scene_perception)
 
