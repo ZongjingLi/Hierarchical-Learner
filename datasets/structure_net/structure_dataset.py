@@ -69,4 +69,4 @@ class StructureGroundingDataset(Dataset):
             
 
         return {"point_cloud":point_cloud,"questions":questions,"answers":answers,\
-            "scene_tree":scene_tree,"programs":programs}, 0
+            "scene_tree":scene_tree,"programs":programs,"index":index,"category":category}, 0

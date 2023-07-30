@@ -1,4 +1,5 @@
 from config     import *
+
 from legacy import freeze_parameters
 from models     import *
 from datasets   import *
@@ -7,6 +8,7 @@ import networkx as nx
 
 from visualize.visualize_pointcloud import vis_pts
 from visualize.visualize_pointcloud import visualize_pointcloud
+from datasets.structure_net.generate_structure_qa import dfs_point_cloud, get_leafs
 
 # [Create a Dataset]
 B = 1
@@ -49,12 +51,25 @@ nx.draw_networkx(scene_tree)
 # plot the point cloud structure
 outputs = learner.scene_perception(sample)
 point_cloud = sample["point_cloud"][0]
-masks = 0
-visualize_pointcloud([
-    (point_cloud, torch.ones([1000,1]))
-])
+masks = outputs["masks"][0]
+category = sample["category"]
+index = sample["index"]
+
 
 vis_pts(point_cloud.permute(1,0).unsqueeze(0),masks.permute(1,0).unsqueeze(0))
+
+# Color the Ground Truth
+hier_path = root + "/partnethiergeo/{}_hier/{}.json".format(category[0], index[0])
+hier_data = load_json(hier_path)
+pc_path = root + "/partnethiergeo/{}_geo/{}.npz".format(category[0], index[0])
+part_pts = np.load(pc_path)
+pts, rgbs = dfs_point_cloud(part_pts["parts"], get_leafs(hier_data))
+
+# visualize point clouds and ground truth
+visualize_pointcloud([
+    (point_cloud, torch.ones([1000,1])),
+    (pts, rgbs)
+])
 
 plt.show()
 

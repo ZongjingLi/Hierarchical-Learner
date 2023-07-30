@@ -32,7 +32,7 @@ def vis_pts_att(pts, label_map, fn="outputs/temp.png", marker=".", alpha=0.9):
         plt.axis("off")
     elif pts.shape[1] == 3:
         TH = 0.7
-        fig = plt.figure()
+        fig = plt.figure("part visualization")
         ax = fig.add_subplot(111, projection="3d")
         ax.set_zlim(-TH,TH)
         ax.set_xlim(-TH,TH)
@@ -48,6 +48,7 @@ def vis_pts_att(pts, label_map, fn="outputs/temp.png", marker=".", alpha=0.9):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_zticklabels([])
+
 
         for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
             axis.set_ticklabels([])

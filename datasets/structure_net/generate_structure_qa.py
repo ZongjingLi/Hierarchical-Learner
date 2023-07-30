@@ -216,7 +216,7 @@ def dfs_point_cloud(pc_data, nodes = None):
     point_cloud = []
     rgbs = []
     num_pt = 1000
-    fig = plt.figure()
+    fig = plt.figure("namo")
     ax = Axes3D(fig)
     if nodes is None: nodes = range(pc_data.shape[0])
     for i in nodes:
