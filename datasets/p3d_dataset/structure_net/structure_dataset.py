@@ -39,7 +39,8 @@ class StructureGroundingDataset(Dataset):
         self.split = split
         if isinstance(category, str): cats = [category]
         else: cats = category
-        self.valid_types = ["geometry"]
+        self.valid_types = ["existence","hierarchy"]
+        if phase in [2,"2"]: self.vlaid_types.append("counting")
         self.data_idx = []
         for cat in cats:
             with open(root + "/partnethiergeo/{}_geo/{}.txt".format(cat,split),"r") as split_idx:

@@ -38,7 +38,7 @@ class SceneProgramExecutor(nn.Module):
 
         # [Word Vocab]
         concept_vocab = []
-        with open("knowledge/{}_concept_vocab.txt".format(config.domain)) as vocab:
+        with open(config.root + "/knowledge/{}_concept_vocab.txt".format(config.domain)) as vocab:
             for concept_name in vocab:concept_vocab.append(concept_name.strip())
 
         self.concept_vocab = concept_vocab

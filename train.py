@@ -65,7 +65,7 @@ def load_scene(scene, k):
 def train_pointcloud(train_model, config, args, phase = "1"):
     B = args.batch_size
     assert phase in ["0", "1", "2", "3", "4", "5",0,1,2,3,4,5],print("not a valid phase")
-    query = True if args.training_mode in ["joint", "query"] else False
+    query = True if not args.training_mode in ["0",0] else False
     print("\nstart the experiment: {} query:[{}]".format(args.name,query))
     print("experiment config: \nepoch: {} \nbatch: {} samples \nlr: {}\n".format(args.epoch,args.batch_size,args.lr))
 
@@ -73,11 +73,12 @@ def train_pointcloud(train_model, config, args, phase = "1"):
     if args.dataset == "Objects3d":
         train_dataset= Objects3dDataset(config, sidelength = 128, stage = int(phase))
     if args.dataset == "StructureNet":
-        if phase in ["0","1"]:
+        if phase in ["0",]:
             train_dataset = StructureDataset(config, category = "vase")
-        if phase in ["2","3","4"]:
-            train_dataset = StructureGroudingDataset(config)
-
+        if phase in ["1","2","3","4"]:
+            train_dataset = StructureGroundingDataset(config, category = args.category, split = "train", phase = "1")
+    
+    train_dataset = StructureGroundingDataset(config, category="vase", split = "train")
     dataloader = DataLoader(train_dataset, batch_size = int(args.batch_size), shuffle = args.shuffle)
 
     # [joint training of perception and language]
@@ -93,6 +94,9 @@ def train_pointcloud(train_model, config, args, phase = "1"):
     if args.optimizer == "RMSprop":
         optimizer = torch.optim.RMSprop(train_model.parameters(), lr = args.lr)
 
+    if args.freeze_perception:
+         print("freezed the perception module: True")
+         freeze_parameters(train_model)
     # [start the training process recording]
     itrs = 0
     start = time.time()
@@ -107,6 +111,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
         epoch_loss = 0
         for sample in dataloader:
             sample, gt = sample
+            break;
             # [perception module training]
 
             outputs = model.scene_perception(sample)
@@ -219,8 +224,10 @@ argparser.add_argument("--name",                    default = "KFT")
 argparser.add_argument("--epoch",                   default = 400 * 3)
 argparser.add_argument("--optimizer",               default = "Adam")
 argparser.add_argument("--lr",                      default = 1e-3)
-argparser.add_argument("--batch_size",              default = 16)
+argparser.add_argument("--batch_size",              default = 1)
 argparser.add_argument("--dataset",                 default = "toy")
+argparser.add_argument("--category",                default = ["vase"])
+argparser.add_argument("--freeze_perception",       default = False)
 argparser.add_argument("--concept_type",            default = False)
 
 # [perception and language grounding training]
@@ -250,6 +257,7 @@ args = argparser.parse_args()
 
 config.perception = args.perception
 if args.concept_type: config.concept_type = args.concept_type
+args.freeze_perception = bool(args.freeze_perception)
 
 if args.checkpoint_dir:
     #model = torch.load(args.checkpoint_dir, map_location = config.device)

@@ -254,6 +254,11 @@ def generate_full(cat = "chair", idx = 172, pts_num = 2048):
     
     return {"point_cloud":pc, "rgbs":rgbs,"scene_tree":scene_tree,"questions":questions,"answers":answers}
 
+def build_labels(h,voc):
+    if h["label"] not in voc: voc.append(h["label"])
+    if "children" in h:
+        for child in h["children"]:
+            build_labels(child, voc)
 
 def generate_structure(cat = "chair", idx = 176):
     pc_path = root + "/partnethiergeo/{}_geo/{}.npz".format(cat, idx)
@@ -267,25 +272,86 @@ def generate_structure(cat = "chair", idx = 176):
     hier_data = load_json(hier_path)
 
     scene_tree = nx.Graph()
+    uniform_tree = nx.DiGraph()
     def build(h,root):
         name = h["label"]+ "_" + np.random.choice([*"abcedfghijklmnopqrstuvwxyz"])
+        uniform_name = h["label"]
         scene_tree.add_node(name)
         scene_tree.add_edge(root, name)
+        uniform_tree.add_node(uniform_name)
+        uniform_tree.add_edge(root[:-2],uniform_name)
+
         if "children" in h:
             for child in h["children"]:
                 build(child, name)
     build(hier_data, "root")
 
-    questions = {"geometry":[],"instance":[]}
-    answers = {"geometry":[],"instance":[]}
+    # [Build Question Ansering Pairs] build category labels in the scene
+    scene_labels = [];  build_labels(hier_data,scene_labels)
+    all_labels = ["pot","body","container","containing_things","liquid_or_soil"\
+                "plant","other","lid","base","foot_base","foot"]
+    qa_pairs = []
+    # Existence Questions
+    # Template: Is there any {part} in the scene
+    # program: exist(filter(scene(),part))
+    num_existence = len(scene_labels)
+    for n in range(num_existence):
+        part = np.random.choice(scene_labels)
+        question = "Is there any {} in the scene?".format(part)
+        answer = "yes"
+        program = "exist(filter(scene(),{}))".format(part)
+        qa_pairs.append({"type":"existence","question":question,"program":program,"answer":answer})
+
+    for n in range(num_existence * 1):
+        part = np.random.choice(all_labels)
+        question = "Is there any {} in the scene??".format(part)
+        answer = "yes" if part in scene_labels else "no"
+        program = "exist(filter(scene(),{}))".format(part)
+        qa_pairs.append({"type":"existence","question":question,"program":program,"answer":answer})
+
+    # Hierarchy Questions
+    # Template: Does {part_1} contains {part_2}
+    # program: exist(filter(subtree(filter(scene(),part_1)),part_2))
+    num_hierarchy = len(scene_labels) * 2
+    for n in range(num_hierarchy):
+        if len(scene_labels) > 1:
+            part_1 = np.random.choice(scene_labels)
+            remain_labels = []
+            for label in scene_labels:
+                if label != part_1:remain_labels.append(label)
+        
+            part_2 = np.random.choice(remain_labels)
+            question = "Does {} contains {}?".format(part_1, part_2)
+            answer = "yes" if nx.has_path(uniform_tree,part_1,part_2) else "no"
+            program = "exist(filter(subtree(filter(scene(),{})),{}))".format(part_1,part_2)
+            qa_pairs.append({"type":"hierarchy","question":question,"program":program,"answer":answer})
+
+    # Template: Is there any {part_1} in the {part_2}
+
+    # Counting Questions
+    # Template: How many {part} are there in the scene
+    # program:  count(filter(scene(), part))
+    # answers:  number of specific part in the scene
+    num_counting = 5
+    for n in range(num_counting):
+        part = np.random.choice(scene_labels)
+        question = "How many {} are there in the scene".format(part)
+        answer = 0
+        for label in scene_labels:
+            if part == label:answer += 1
+        program = "count(filter(scene(),{}))".format(part)
+        qa_pairs.append({"type":"counting","question":question,"program":program,"answer":answer})
+    
     questions_answers = {"all":[
-        {"type":"geometry","question":"is there any object in the scene?","answer":"True","program":"exist(subtree(scene()))"},
+        qa_pair for qa_pair in qa_pairs
     ]}
 
-    return {"point_cloud":pc, "rgbs":None,"scene_tree":scene_tree,"questions":questions,"answers":answers,\
+    return {"point_cloud":pc, "rgbs":None,"scene_tree":scene_tree,\
         "questions_answers":questions_answers}
 
 #outputs = generate_color(idx = 176)
+
+def tree_contain(p1,p2,tree):pass
 
 import argparse
 
@@ -341,11 +407,9 @@ if genargs.mode == "geo":
             index = int(index.strip())
             outputs = generate_structure(cat = genargs.category, idx = index)
             point_cloud =   outputs["point_cloud"]
-            questions   =   outputs["questions"]
-            answers     =   outputs["answers"]
-            save_json(questions,root + "/partnet_{}_qa/{}/test/qa/{}.json".\
-                format(genargs.mode,genargs.category,index))
-            save_json(answers,root + "/partnet_{}_qa/{}/test/qa/{}.json".\
+            
+            questions_answers   =   outputs["questions_answers"]
+            save_json(questions_answers,root + "/partnet_{}_qa/{}/test/qa/{}.json".\
                 format(genargs.mode,genargs.category,index))
             np.save(root + "/partnet_{}_qa/{}/test/point_cloud/{}.npy".format(genargs.mode,genargs.category,index)\
                 ,np.array(point_cloud))
