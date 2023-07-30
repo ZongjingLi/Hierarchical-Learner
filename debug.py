@@ -72,7 +72,7 @@ scene_tree = nx.read_gpickle(scene_tree_path)
 plt.figure("scene tree")
 nx.draw_networkx(scene_tree)
 
-#plt.show()
+plt.show()
 
 freeze_parameters(learner.scene_perception)
 

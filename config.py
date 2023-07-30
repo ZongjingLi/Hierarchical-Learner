@@ -9,6 +9,7 @@ device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 parser = argparse.ArgumentParser()
 
+parser.add_argument("--root",               default = "root")
 parser.add_argument("--dataset_root",       default = "/Users/melkor/Documents/datasets")
 parser.add_argument("--device",             default = device)
 parser.add_argument("--name",               default = "SceneGraphLearner")

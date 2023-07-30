@@ -24,6 +24,10 @@ colors = [
     '#7f7f7f',  # middle gray
     '#bcbd22',  # curry yellow-green
     '#17becf'   # blue-teal
+    '#2e93d1',
+    '#F97934',
+    '#C3F2F9',
+    '#FFFFF1'
 ]
 
 def hex2rgb(h):
@@ -220,7 +224,7 @@ def dfs_point_cloud(pc_data, nodes = None):
     ax = Axes3D(fig)
     if nodes is None: nodes = range(pc_data.shape[0])
     for i in nodes:
-        k = np.random.randint(0,9)
+        k = np.random.randint(0,10 - 1)
         color_name = color_names[k]
         color = torch.tensor(colors[k])
         pts = torch.tensor(pc_data[i])
@@ -357,15 +361,15 @@ print("Generation Completed: Category:{} Mode: {}".format(genargs.category, gena
 """
 """
 
-outputs = generate_structure(cat = "vase", idx = 4167)
+#outputs = generate_structure(cat = "vase", idx = 4167)
 #outputs = generate_structure(cat = "table", idx = 18142)
-st = outputs["scene_tree"]
-nx.draw_networkx(st)
-plt.show()
+#st = outputs["scene_tree"]
+#nx.draw_networkx(st)
+#plt.show()
 
-if outputs["rgbs"] is None: outputs["rgbs"] = .5 * torch.ones([outputs["point_cloud"].shape[0],3] )
+#if outputs["rgbs"] is None: outputs["rgbs"] = .5 * torch.ones([outputs["point_cloud"].shape[0],3] )
 
-visualize_pointcloud([
-    (outputs["point_cloud"], outputs["rgbs"])
-])
-plt.show()
+#visualize_pointcloud([
+#    (outputs["point_cloud"], outputs["rgbs"])
+#])
+#plt.show()
