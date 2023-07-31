@@ -7,6 +7,7 @@ from config import *
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
+import networkx as nx
 
 config.perception = "csqnet"
 learner = SceneLearner(config)
@@ -30,140 +31,149 @@ colors = [
     '#17becf'   # blue-teal
 ]
 
-colors = np.array([[float(c)/255.0 for c in hex2rgb(color)] for color in colors])
-tree_color = colors[-1]
 
-def visualize_tree(scores,connections,labels = None, sigma = False):
+"""
+pot
+body
+container
+containing_things
+liquid_or_soil
+plant
+other
+lid
+base
+foot_base
+foot
+"""
 
-    fig, ax = plt.subplots()
-    ax.tick_params(left = False, right = False , labelleft = False ,
-                labelbottom = False, bottom = False)
+gt_tree = nx.DiGraph()
+gt_tree.add_nodes_from(["pot","body","container","plant"])
+gt_tree.add_edges_from([
+    ("pot","body"),
+    ("body","container"),
+    ("body","plant")
+])
 
-    min_v = 0.1; max_v = 1.0
-    if labels is None: labels = [
-        ["p" for _ in range(len(scores[t]))] for t in range(len(scores))
-    ]
-    layouts = []; eps = 0.00; width = 0.4; n = 1
 
-    # Draw Nodes and Possible Patches of the Tree
-    for i,idx in enumerate(range(len(scores))):
-        score = scores[i]; ss = len(score)
-        layout = torch.linspace(-(width)**i,(width)**i,ss)
-        alphas = torch.sigmoid(scores[i]).cpu().detach() \
-            if sigma else scores[i].cpu().detach()
-        alphas = alphas.clamp(min_v,max_v)
-        ax.scatter(layout,torch.tensor(i/n).repeat(ss), \
-            alpha = alphas, c = [tree_color for _ in range(ss)],linewidths=12)
-        for u in range(ss): 
-            plt.text(layout[u]-0.02,i/n,labels[i][u])
-            im = plt.imread('assets/ice.png')
-            oi = OffsetImage(im, zoom = 0.15, alpha = float(alphas[u]))
-            box = AnnotationBbox(oi, (layout[u]-0.02,i/n), frameon=False)
-            ax.add_artist(box)
-        layouts.append([layout,i/n])
+colors = [(1.0,1.0,1.0,1.0) for _ in range(4)]
 
-    # Draw All the Connections between Nodes
-    for k in range(len(connections)):
-        connection = connections[k]
-        lower_layout = layouts[k]
-        upper_layout = layouts[k+1]
-        for i in range(len(lower_layout[0])):
-            for j in range(len(upper_layout[0])):
-                alpha = float(connection[j][i])
-                ax.plot(
-                    (lower_layout[0][i],upper_layout[0][j]),
-                    (lower_layout[1] + eps,upper_layout[1] - eps),
-                    color = "gray", alpha = alpha
-                    ) 
-    ax.tick_params(left = False, right = False , labelleft = False ,
-                labelbottom = False, bottom = False)
-    
-eps = 1e-6; d = 132
+plt.figure("gt_tree")
+plt.subplot(1,2,1)
+layout = nx.layout.planar_layout(gt_tree.nodes)
+
+nx.draw_networkx_nodes(gt_tree,layout,label = nx.nodes)
+nx.draw_networkx_edges(
+    gt_tree,pos=layout,alpha=(0.4,0.3,0.1),width=5)
+#plt.subplot(1,2,1)
+#nx.draw_networkx(gt_tree,nx.layout.shell_layout(gt_tree.nodes), node_color = colors)
+
+eval_data = []
+for node in gt_tree.nodes:
+    eval_data.append({"program":"","answer":"yes"})
+for edge in gt_tree.edges:
+    eval_data.append({"program":"","answer":"yes"})
+
+def build_label(feature, executor):
+    default_label = "x"
+    default_color = [0,0,0,0.1]
+    predicates = executor.concept_vocab
+    prob = 0.1
+    for predicate in predicates:
+        logit = executor.entailment(
+            feature,executor.get_concept_embedding(predicate)).unsqueeze(-1) 
+        if logit > 0:
+            default_label = predicate
+            prob = torch.sigmoid((logit - 0.5)/0.5).detach()
+    default_color = [1,0,0.4,float(max(prob,0.1))]
+    return default_label, default_color
+
+def visualize_outputs(scores, features, connections,executor):
+    shapes = [score.shape[0] for score in scores]
+    nodes = []
+    labels = []
+    colors = []
+    edges = []
+    edge_alphas = []
+    for i in range(len(scores)):
+        for j in range(len(scores[i])):
+            nodes.append(sum(shapes[:i]) + j)
+            l,c = build_label(features[i][j], executor)
+            c[0] = [0.2,0.4,0.6][i]
+            labels.append(l)
+            colors.append(c)
+
+    for n in range(len(connections)):
+        connection = connections[n]
+        r,c = connection.shape
+        for i in range(r):
+            for j in range(c):
+                u = i + sum(shapes[:n])
+                v = j + sum(shapes[:n+1])
+                edges.append((v,u))
+                #print(u,v,float(connection[i][j].detach()))
+                edge_alphas.append(float(connection[i][j].detach()))
+
+    csq_tree = nx.DiGraph()
+    csq_tree.add_nodes_from(nodes)
+    csq_tree.add_edges_from(edges)
+    layout = nx.layout.kamada_kawai_layout(csq_tree)
+  
+    nx.draw_networkx_nodes(csq_tree, layout, node_color = colors)
+
+    nx.draw_networkx_edges(
+    csq_tree,pos=layout,alpha=edge_alphas,width=1)
+
+
+model = SceneLearner(config)
+optim = torch.optim.Adam(model.parameters(), lr = 2e-4)
+
+struct = config.hierarchy_construct
+node_features = [
+    torch.randn([1,struct[i],100]) for i in range(3)
+]
+
 scores = [
-    torch.tensor([1,0.0,0.9]).clamp(eps,1-eps),
-    torch.tensor([0,0,0,0,0,0.9]).clamp(eps,1-eps)
-    ]
+    torch.ones(1),
+    torch.ones(3),
+    torch.ones(4),
+]
+scores.reverse()
 
 features = [
-    torch.randn([3,d]),
-    torch.randn([5,d]),
-    ]
+    torch.randn(1),
+    torch.randn(3),
+    torch.randn(4),
+]
+features.reverse()
 
 connections = [
     torch.tensor([
-        [1,1,0,0,0,0],
-        [0,0,1,0,0,1],
-        [0,0,0,1,1,0],
-    ]).float()
+        [1.0],
+        [1.0],
+        [0.3]
+    ]),
+    torch.tensor([
+        [0.8,0.0,0.2],
+        [0.0,0.1,0.9],
+        [0.1,0.9,0.0],
+        [0.0,0.9,0.2],
+    ]),
+
 ]
+connections.reverse()
 
-for term in [scores, features, connections]:term.reverse()
-
-kwargs = {"features":features,
-          "end":scores,
-          "connections":connections}
-
-q = learner.executor.parse("parents(scene())")
-print("parents:",q)
-
-o = learner.executor(q, **kwargs)
-o["end"].reverse()
-for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))
-
-q = learner.executor.parse("subtree(scene())")
-print("subtree",q)
-
-o = learner.executor(q, **kwargs)
-o["end"].reverse()
-for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))
-
-#visualize_tree(scores,connections)
-#plt.show()
-
-# there is an $p1$ contains a $p2$
-# exist(filter(subtree(filter(scene(),p1)),p2))
-
-import matplotlib.pyplot as plt
-import networkx as nx
-
-G = nx.balanced_tree(3, 5)
-pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", args="")
-plt.figure(figsize=(8, 8))
-nx.draw(G, pos, node_size=20, alpha=0.5, node_color="blue", with_labels=False)
-plt.axis("equal")
+plt.subplot(122)
+visualize_outputs(scores, features, connections, model.executor)
 plt.show()
 
-B = 2
-features = torch.randn([B,10,100])
-scene = learner.build_scene(features)
+for epoch in range(1000):
+    
+    loss = 0
+    for qa_pair in eval_data:
+        q = qa_pair[""]
+        loss += 0
+    optim.zero_grad()
+    loss.backward()
+    optim.step()
 
-def load_scene(scene, k): 
-    scores = scene["scores"]; features = scene["features"]; connections = scene["connections"]
-    return [score[k] for score in scores], [feature[k] for feature in features], \
-        [connection[k] for connection in connections[1:]]
-
-#for score in scene["scores"]:print(score.shape)
-
-scores,features,connections = load_scene(scene, 1)
-
-kwargs = {"features":features,
-          "end":scores,
-          "connections":connections}
-
-"""
-executor
-"""
-
-q = learner.executor.parse("parents(scene())")
-print("parents:",q)
-
-o = learner.executor(q, **kwargs)
-o["end"].reverse()
-for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))
-
-q = learner.executor.parse("subtree(scene())")
-print("subtree",q)
-
-o = learner.executor(q, **kwargs)
-o["end"].reverse()
-for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))
+#for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))

@@ -33,7 +33,7 @@ def load_scene(scene, k):
 
 
 learner = SceneLearner(config)
-learner.load_state_dict(torch.load("checkpoints/KFT_3d_perception_structure_csqnet_phase0_vase.pth",map_location = "cpu"))
+learner.load_state_dict(torch.load("checkpoints/VNL_3d_perception_structure_csqnet_phase0.pth",map_location = "cpu"))
 optimizer = torch.optim.RMSprop(learner.parameters(), lr = 1e-4)
 
 print(sample["programs"])
@@ -75,6 +75,8 @@ nx.draw_networkx(scene_tree)
 plt.show()
 
 freeze_parameters(learner.scene_perception)
+
+
 
 visualize = True
 for epoch in range(10000):

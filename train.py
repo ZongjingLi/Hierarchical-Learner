@@ -66,6 +66,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
     B = int(args.batch_size)
     assert phase in ["0", "1", "2", "3", "4", "5",0,1,2,3,4,5],print("not a valid phase")
     query = False if args.phase in ["0",0] else True
+    clip_grads = query
     print("\nstart the experiment: {} query:[{}]".format(args.name,query))
     print("experiment config: \nepoch: {} \nbatch: {} samples \nlr: {}\n".format(args.epoch,args.batch_size,args.lr))
     if args.phase in ["1",1]: args.loss_weights["equillibrium"] = 0.01
@@ -181,8 +182,8 @@ def train_pointcloud(train_model, config, args, phase = "1"):
 
             optimizer.zero_grad()
             working_loss.backward()
-
-            torch.nn.utils.clip_grad_norm(train_model.executor.parameters() , -max_gradient, max_gradient)
+            if clip_grads:
+                torch.nn.utils.clip_grad_norm(train_model.executor.parameters() , -max_gradient, max_gradient)
             optimizer.step()
 
             writer.add_scalar("working_loss", working_loss, itrs)
