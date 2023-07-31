@@ -65,17 +65,18 @@ def load_scene(scene, k):
 def train_pointcloud(train_model, config, args, phase = "1"):
     B = int(args.batch_size)
     assert phase in ["0", "1", "2", "3", "4", "5",0,1,2,3,4,5],print("not a valid phase")
-    query = False if args.phase in ["0",0] else False
+    query = False if args.phase in ["0",0] else True
     print("\nstart the experiment: {} query:[{}]".format(args.name,query))
     print("experiment config: \nepoch: {} \nbatch: {} samples \nlr: {}\n".format(args.epoch,args.batch_size,args.lr))
-
+    if args.phase in ["1",1]: args.loss_weights["equillibrium"] = 0.01
     #[setup the training and validation dataset]
+
     if args.dataset == "Objects3d":
         train_dataset= Objects3dDataset(config, sidelength = 128, stage = int(phase))
     if args.dataset == "StructureNet":
-        if phase in ["0",]:
+        if args.phase in ["0",]:
             train_dataset = StructureDataset(config, category = "vase")
-        if phase in ["1","2","3","4"]:
+        if args.phase in ["1","2","3","4"]:
             train_dataset = StructureGroundingDataset(config, category = args.category, split = "train", phase = "1")
     
     #train_dataset = StructureGroundingDataset(config, category="vase", split = "train")
@@ -97,7 +98,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
 
     if args.freeze_perception:
          print("freezed the perception module: True")
-         freeze_parameters(train_model)
+         freeze_parameters(train_model.scene_perception)
     # [start the training process recording]
     itrs = 0
     start = time.time()
@@ -107,14 +108,14 @@ def train_pointcloud(train_model, config, args, phase = "1"):
     if not os.path.exists(ckpt_dir): os.makedirs(ckpt_dir)
     if not os.path.exists(events_dir): os.makedirs(events_dir)
     writer = SummaryWriter(events_dir)
-
+    max_gradient = 1000.
     for epoch in range(args.epoch):
         epoch_loss = 0
         for sample in dataloader:
             sample, gt = sample
             # [perception module training]
 
-            outputs = model.scene_perception(sample)
+            outputs = train_model.scene_perception(sample)
             all_losses = {}
 
             # [Perception Loss]
@@ -167,7 +168,6 @@ def train_pointcloud(train_model, config, args, phase = "1"):
                         if answer in yes_or_no:
                             if answer == "yes":language_loss -= torch.log(torch.sigmoid(o["end"]))
                             else:language_loss -= torch.log(1 - torch.sigmoid(o["end"]))
-
                         #language_loss += (1 + torch.sigmoid( (o["end"] + g) )/r)
 
             # [calculate the working loss]
@@ -181,6 +181,8 @@ def train_pointcloud(train_model, config, args, phase = "1"):
 
             optimizer.zero_grad()
             working_loss.backward()
+
+            torch.nn.utils.clip_grad_norm(train_model.executor.parameters() , -max_gradient, max_gradient)
             optimizer.step()
 
             writer.add_scalar("working_loss", working_loss, itrs)
@@ -231,7 +233,7 @@ argparser.add_argument("--device",                  default = config.device)
 argparser.add_argument("--name",                    default = "KFT")
 argparser.add_argument("--epoch",                   default = 400 * 3)
 argparser.add_argument("--optimizer",               default = "Adam")
-argparser.add_argument("--lr",                      default = 1e-3)
+argparser.add_argument("--lr",                      default = 2e-4)
 argparser.add_argument("--batch_size",              default = 1)
 argparser.add_argument("--dataset",                 default = "toy")
 argparser.add_argument("--category",                default = ["vase"])
@@ -258,7 +260,7 @@ argparser.add_argument("--effective_level",         default = 1)
 
 # [checkpoint location and savings]
 argparser.add_argument("--checkpoint_dir",          default = False)
-argparser.add_argument("--checkpoint_itrs",         default = 10)
+argparser.add_argument("--checkpoint_itrs",         default = 1000)
 argparser.add_argument("--pretrain_perception",     default = False)
 
 args = argparser.parse_args()
@@ -266,6 +268,7 @@ args = argparser.parse_args()
 config.perception = args.perception
 if args.concept_type: config.concept_type = args.concept_type
 args.freeze_perception = bool(args.freeze_perception)
+args.lr = float(args.lr)
 
 if args.checkpoint_dir:
     #model = torch.load(args.checkpoint_dir, map_location = config.device)
@@ -300,6 +303,7 @@ def build_perception(size,length,device):
     return torch.tensor(edges).to(device)
 
 print("using perception: {} knowledge:{} dataset:{}".format(args.perception,config.concept_type,args.dataset))
+
 
 if args.dataset in ["Objects3d","StructureNet"]:
     print("start the 3d point cloud model training.")

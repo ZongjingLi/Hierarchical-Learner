@@ -56,13 +56,13 @@ parser.add_argument("--concept_projection", default = True)
 parser.add_argument("--concept_type",       default = "cone")
 parser.add_argument("--concept_dim",        default = 100)
 parser.add_argument("--object_dim",         default = 100)
-parser.add_argument("--temperature",        default = 32.)
+parser.add_argument("--temperature",        default = 32. * 4)
 
 # box concept methods
 parser.add_argument("--method",             default = "uniform")
 parser.add_argument("--offset",             default = [-.25, .25])
 parser.add_argument("--center",             default =[.0, .0])
-parser.add_argument("--entries",            default = 32 * 2)
+parser.add_argument("--entries",            default = 32 * 3)
 parser.add_argument("--translator",         default = translator)
 
 
