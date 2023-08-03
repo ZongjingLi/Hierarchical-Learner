@@ -43,25 +43,44 @@ class SceneLearner(nn.Module):
         # [Hierarchy Structure Network]
         self.scene_builder = nn.ModuleList([HierarchyBuilder(config, slot_num) \
             for slot_num in config.hierarchy_construct])
+        self.is_box = False
+        if self.is_box:
+            self.hierarhcy_maps = nn.ModuleList([FCBlock(128,2,config.concept_dim,config.concept_dim)\
+            for _ in range(len(config.hierarchy_construct)) ])
+        else:
+            self.hierarhcy_maps = nn.ModuleList([FCBlock(128,2,config.concept_dim,config.concept_dim)\
+            for _ in range(len(config.hierarchy_construct)) ])
         self.feature2concept = nn.Linear(131,config.concept_dim)
+    
     
     def build_scene(self,input_features):
         """
         features: BxNxD
         scores:   BxNx1 
         """
+        B,N,D = input_features.shape
         scores = []
         features  = []
         connections = []
 
-        for builder in self.scene_builder:
+        input_scores = torch.ones([B,N,1])
+        for i,builder in enumerate(self.scene_builder):
             #input_features [B,N,D]
-            masks = builder(input_features, self.executor) # [B,M,N]
+            if self.is_box:
+                masks = builder(input_features[:,:,:100], input_scores, self.executor) # [B,M,N]
+            else:masks = builder(input_features, input_scores, self.executor) # [B,M,N]
             # [Build Scene Hierarchy]
-            score = torch.max(masks, dim = -1).values # hierarchy scores # [B,M]
-            #print(scores.shape, masks.shape, input_features.shape)
-            feature = torch.einsum("bmn,bnd->bmd",masks,input_features) # hierarchy features # [B,M,D]
 
+            score = torch.max(masks, dim = -1).values.clamp(EPS,1-EPS) # hierarchy scores # [B,M]
+            #print(score,masks)
+            input_scores = score.unsqueeze(-1)
+ 
+            feature = torch.einsum("bmn,bnd->bmd",masks,input_features) # hierarchy features # [B,M,D]
+            if self.is_box:
+                feature = self.hierarhcy_maps[i](feature[:,:,:100])
+                feature = torch.cat([feature, torch.ones([1,feature.shape[1],100]) * EPS],dim = -1)
+            else:
+                feature = self.hierarhcy_maps[i](feature)
             # [Build Scores, Features, and Connections]
             scores.append(score) # [B,M]
             features.append(feature) # [B,M,D]

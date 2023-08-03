@@ -39,38 +39,109 @@ class GraphConvolution(nn.Module):
                + str(self.in_features) + ' -> ' \
                + str(self.out_features) + ')'
 
+class FCLayer(nn.Module):
+    def __init__(self, in_features, out_features):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(in_features, out_features),
+            nn.LayerNorm([out_features]),
+            nn.CELU(),
+        )
+
+    def forward(self, input):
+        return self.net(input)
+
+class FCBlock(nn.Module):
+    def __init__(self,
+                 hidden_ch,
+                 num_hidden_layers,
+                 in_features,
+                 out_features,
+                 outermost_linear=False):
+        super().__init__()
+
+        self.net = []
+        self.net.append(FCLayer(in_features=in_features, out_features=hidden_ch))
+
+        for i in range(num_hidden_layers):
+            self.net.append(FCLayer(in_features=hidden_ch, out_features=hidden_ch))
+
+        if outermost_linear:
+            self.net.append(nn.Linear(in_features=hidden_ch, out_features=out_features))
+        else:
+            self.net.append(FCLayer(in_features=hidden_ch, out_features=out_features))
+
+        self.net = nn.Sequential(*self.net)
+
+    def __getitem__(self,item):
+        return self.net[item]
+
+    def forward(self, input):
+        return self.net(input)
+
 
 class HierarchyBuilder(nn.Module):
     def __init__(self, config, output_slots, nu = 11):
         super().__init__()
+        nu = 100 
         num_unary_predicates = nu
         num_binary_predicates = 0
         spatial_feature_dim = 0
-        input_dim = num_unary_predicates + spatial_feature_dim
+        input_dim = num_unary_predicates + spatial_feature_dim + 1
+        box = False
         self.num_unary_predicates = num_unary_predicates
         self.num_binary_predicates = num_binary_predicates
         self.graph_conv = GraphConvolution(input_dim,output_slots)
+        if box:
+            self.edge_predictor = FCBlock(128,3,input_dim * 2,1)
+        else: self.edge_predictor = FCBlock(128,3,input_dim *2 ,1)
+        self.dropout = nn.Dropout(0.21)
 
-    def forward(self, x, executor):
+
+    def forward(self, x, scores, executor):
         """
         input: 
             x: feature to agglomerate [B,N,D]
         """
         B, N, D = x.shape
         predicates = executor.concept_vocab
-   
 
-        factored_features = [executor.entailment(
+        if False:
+            factored_features = [executor.entailment(
             x,executor.get_concept_embedding(predicate)
             ).unsqueeze(-1) for predicate in predicates]
+            factored_features.append(scores)
 
-        factored_features = torch.cat(factored_features, dim = -1)
+            factored_features = torch.cat(factored_features, dim = -1)
+        else:
+            factored_features = torch.cat([x,scores], dim = -1)
 
         # [Perform Convolution on Factored States]
-        adjs = torch.ones([B, N, N])
+
+        adjs = self.edge_predictor(
+            torch.cat([
+                factored_features.unsqueeze(1).repeat(1,N,1,1),
+                factored_features.unsqueeze(2).repeat(1,1,N,1),
+            ], dim = -1)
+        ).squeeze(-1)
+        #adjs = torch.sigmoid(adjs)
+        adjs = self.dropout(adjs)
+
+        #adjs = torch.zeros([B, N, N])
         graph_conv_masks = self.graph_conv(factored_features, adjs).permute([0,2,1])
 
         # [Build Connection Between Input Features and Conv Features]
         #graph_conv_masks = torch.einsum("bnd,bmd->bnm")
-        graph_conv_masks = F.softmax(graph_conv_masks, dim = 1)
-        return graph_conv_masks #[B,N,M]
+        M = graph_conv_masks.shape[1]
+        scale = 65.0
+
+        graph_conv_masks = F.softmax(scale * graph_conv_masks, dim = -1)
+        
+
+        g = graph_conv_masks 
+        #graph_conv_masks = graph_conv_masks / torch.sum(graph_conv_masks,dim =1,keepdim = True)
+        g = g / g.sum( dim = 1, keepdim = True)
+        #print(g,scores.squeeze(-1).repeat(1,M,1))
+        g = torch.min(scores.squeeze(-1).repeat(1,M,1),g)
+        
+        return graph_conv_masks #[B,10,7]

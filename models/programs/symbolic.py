@@ -8,7 +8,7 @@ from utils import copy_dict,apply,EPS
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 inf = torch.tensor(int(1e8)).to(device)
-EPS = 1e-8
+EPS = 1e-6
 
 class SymbolicProgram(AbstractProgram):
     def __init__(self, *args):
@@ -133,6 +133,7 @@ class Filter(SymbolicProgram):
     def __init__(self, *args):
         super().__init__(*args)
         self.child, self.concept = args
+        self.flag = True
 
     def __call__(self, executor):
         child = self.child(executor)
@@ -143,18 +144,35 @@ class Filter(SymbolicProgram):
             #print(executor.kwargs["features"][i].shape)
             #for feature in executor.kwargs["features"][i]:
             features = executor.kwargs["features"][i]
-            mask_value = torch.min(child["end"][i],executor.entailment(features,
+            if not self.flag:
+                mask_value = torch.min(child["end"][i],executor.entailment(features,
                 executor.get_concept_embedding(self.concept)))
+            else:            
+                mask_value = self.get_normalized_prob(child["end"][i],features,self.concept,executor)
+
+                mask_value = mask_value.clamp(EPS, 1-EPS)
+
+                mask_value = torch.log(mask_value/ (1 - mask_value))
+
             level_mask.append(mask_value)
 
             tree_masks.append(torch.cat(level_mask, dim = -1))
-
-    
-
-        #query_object = mask[..., 0].max(-1).indices
-        #print(filter_logit)
+   
         return {**child, "end": tree_masks, 
             "feature": executor.kwargs["features"],} #"query_object": query_object}
+
+    def get_normalized_prob(self, end, feat, concept, executor):
+        pdf = []
+        for predicate in executor.concept_vocab:
+            pdf.append(torch.sigmoid(executor.entailment(feat,
+                executor.get_concept_embedding(predicate) )).unsqueeze(0) )
+        
+        pdf = torch.cat(pdf, dim = 0)
+        idx = executor.concept_vocab.index(concept)
+
+        return pdf[idx]/ pdf.sum(dim = 0)
+
+
 
 
 class Relate(SymbolicProgram):
@@ -366,9 +384,17 @@ class  Subtree(SymbolicProgram):
             current_scores = torch.sigmoid(tree_logits[i])
 
             path_prob = torch.einsum("mn,m->n",connections[i - 1], current_scores)
+            path_prob = []
+            for j in range(connections[i-1].shape[1]):
 
-            tree_logits[i - 1] = path_prob
+                pb = torch.max(torch.min(connections[i - 1].permute(1,0)[j], current_scores))
+                path_prob.append(pb.unsqueeze(0))
+
+            path_prob = torch.cat(path_prob, dim = -1)
+   
+
+            tree_logits[i - 1] = path_prob.clamp(EPS,1-EPS)
             tree_logits[i - 1] = torch.log(tree_logits[i-1] / (1 - tree_logits[i-1]))
         
-        tree_logits[-1] = torch.log(torch.ones([len(tree_logits[-1])],device = device) * EPS)
+        #tree_logits[0] = torch.log(torch.ones([len(tree_logits[-1])],device = device) * EPS)
         return {**child, "end": tree_logits}
