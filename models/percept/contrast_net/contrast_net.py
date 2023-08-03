@@ -144,11 +144,6 @@ class ContrastNet__(nn.Module):
         base_scene = [{"scores":scores,"features":base_features,"masks":conv_masks.permute(0,2,3,1),"match":False}]
         return {"abstract_scene":base_scene, "losses":loss}
 
-class Id(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.k = nn.Parameter(torch.randn([1]))
-    def forward(self, x):return x * self.k
 
 class ContrastNet(nn.Module):
     def __init__(self, config):
@@ -157,25 +152,15 @@ class ContrastNet(nn.Module):
         self.convs = RDN(SimpleNamespace(G0=conv_feat_dim  ,RDNkSize=3,n_colors=3,
                                RDNconfig=(4,3,16),scale=[2],no_upsampling=True))
         #self.convs = Id()
-        self.competition = Competition(num_masks = 7)
+        self.grid = 0
 
     def forward(self, ims):
-        conv_feats = self.convs(ims.permute([0,3,1,2]) * 10).permute([0,2,3,1]) * 10
-        #conv_feats = F.normalize(conv_feats, p = 2.0, dim = -1)
-        masks, agents, alive, phenotypes, unharv = self.competition(conv_feats)
-
+        conv_feats = self.convs(ims.permute([0,3,1,2])).permute([0,2,3,1]) * 10
         masks = masks #* alive.unsqueeze(1).unsqueeze(1).squeeze(-1)
-        #masks = torch.cat([masks, unharv], dim = -1)
 
-        # raw features from the masked level
         scores = masks.max(1).values.max(1).values
-        #masked_features = torch.einsum("bwhn,bwhd->bnd",masks,conv_feats)
-        #node_features = masked_features / (torch.einsum("bwhn->bn",masks).unsqueeze(-1)) # [B,N,D]
-        #node_features = torch.
 
-        node_features = phenotypes
-        #print(masks.permute(0,3,1,2).shape)
-        base_scene = [{"scores":scores,"features":node_features,"masks":masks,"match":False}]
+        base_scene = [{"scores":scores,"masks":masks,"match":False}]
  
         return {"masks":masks,"abstract_scene":base_scene}
 
