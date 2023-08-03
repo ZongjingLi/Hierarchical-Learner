@@ -33,6 +33,7 @@ def load_scene(scene, k):
 
 
 learner = SceneLearner(config)
+config.hierarchy_construct = (7,5,3)
 learner.load_state_dict(torch.load("checkpoints/VNL_3d_perception_structure_csqnet_phase0.pth",map_location = "cpu"))
 optimizer = torch.optim.RMSprop(learner.parameters(), lr = 1e-4)
 

@@ -46,8 +46,8 @@ parser.add_argument("--node_feat_dim",      default = 100)
 parser.add_argument("--pose_code",          default = "nl-noR_T")
 
 # concept learner structure
-parser.add_argument("--object_num",         default = 7)
-parser.add_argument("--part_num",           default = 3)
+parser.add_argument("--object_num",         default = 12)
+parser.add_argument("--part_num",           default = 10)
 parser.add_argument("--hierarchy_latent",   default = 128)
 parser.add_argument("--hierarchy_construct",default = [7,5,3])
 

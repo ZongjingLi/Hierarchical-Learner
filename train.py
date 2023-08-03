@@ -116,7 +116,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
             sample, gt = sample
             # [perception module training]
 
-            outputs = train_model.scene_perception(sample)
+            outputs = train_model.part_perception(sample)
             all_losses = {}
 
             # [Perception Loss]
@@ -193,8 +193,10 @@ def train_pointcloud(train_model, config, args, phase = "1"):
             if not(itrs % args.checkpoint_itrs):
                 name = args.name
                 expr = args.training_mode
-                torch.save(train_model.state_dict(), "checkpoints/{}_{}_{}_{}_phase{}.pth".format(name,expr,config.domain,config.perception,phase))
-
+                if query:
+                    torch.save(train_model.state_dict(), "checkpoints/{}_{}_{}_{}_phase{}.pth".format(name,expr,config.domain,config.perception,phase))
+                else:
+                    torch.save(train_model.part_perception.state_dict(),"checkpoints/{}_part_percept_{}_{}_{}_phase{}.pth".format(name,expr,config.domain,config.perception,phase))
                 if args.dataset == "Objects3d":
                     point_cloud = sample["point_cloud"]
                     rgb = sample["rgb"]
@@ -261,7 +263,7 @@ argparser.add_argument("--effective_level",         default = 1)
 
 # [checkpoint location and savings]
 argparser.add_argument("--checkpoint_dir",          default = False)
-argparser.add_argument("--checkpoint_itrs",         default = 1000)
+argparser.add_argument("--checkpoint_itrs",         default = 10)
 argparser.add_argument("--pretrain_perception",     default = False)
 
 args = argparser.parse_args()
