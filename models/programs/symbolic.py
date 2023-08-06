@@ -103,15 +103,18 @@ class Scene(SymbolicProgram):
         super().__init__(*args)
 
     def __call__(self,executor):
-
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
         features = executor.kwargs["features"]
         #logit = torch.ones(features.shape[0] ,device = features.device) * self.BIG_NUMBER
         scores = executor.kwargs["end"]
 
         scene_tree= executor.kwargs["features"]
-
-        logits = [torch.log(score / (1 - score)) for score in scores]
-
+        effective_level = executor.effective_level
+        logits = []
+        for i,score in enumerate(scores):
+            #print(i+1,len(score),effective_level)
+            if (i+1<=effective_level):logits.append(torch.log(score / (1 - score)))
+            else:logits.append(torch.log(EPS * torch.ones_like(score).to(device)/(1 - EPS * torch.ones_like(score))))
         return {"end":logits}
 
 class Unique(SymbolicProgram):
@@ -153,6 +156,7 @@ class Filter(SymbolicProgram):
                 mask_value = mask_value.clamp(EPS, 1-EPS)
 
                 mask_value = torch.log(mask_value/ (1 - mask_value))
+                mask_value = torch.min(child["end"][i], mask_value)
 
             level_mask.append(mask_value)
 
@@ -341,6 +345,7 @@ class Exist(SymbolicProgram):
         max_logit = -inf
         for level in child["end"]:
             new_logit, query_object = level.max(-1)
+
             new_logit = new_logit.clamp(-inf,inf)
             max_logit = torch.max(max_logit, new_logit)
         return {**child, "end": max_logit}

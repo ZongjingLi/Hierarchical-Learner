@@ -75,7 +75,8 @@ def build_label(feature, executor):
         pred_prob = get_prob(executor, feature, predicate)
         if pred_prob > prob:
             prob = pred_prob
-            default_label = "{}_{:.2f}".format(predicate,float(pred_prob))
+            default_label = predicate
+            #default_label = "{}_{:.2f}".format(predicate,float(pred_prob))
 
     default_color = [1,0,0.4,float(prob)]
     return default_label, default_color
@@ -100,6 +101,8 @@ def visualize_outputs(scores, features, connections,executor, kwargs):
             else:label,c = build_label(features[i][j], executor)
             c[0] = float(torch.linspace(0,1,len(scores))[i])
             c[-1] = min(float(scores[i][j]),c[-1])
+            c[-1] = float(scores[i][j])
+            label = "{}_{:.2f}".format(label,c[-1])
             labels.append(label);colors.append(c)
             # layout the locations
             layouts.append([xs[j],i * height])
@@ -132,7 +135,7 @@ plt.figure("visualize",figsize=(6,6))
 
 TEST = 0
 
-config.hierarchy_construct = (2,2,1)
+config.hierarchy_construct = (4,3,1)
 
 config.temperature = 2.55
 model = SceneLearner(config)
@@ -165,17 +168,142 @@ else:
     ]
     
 base_features = Variable(torch.randn([1,3,100]), requires_grad=True)
-optim = torch.optim.Adam([{'params': model.parameters()},
-                            {'params':base_features},
-                            {"params":test_features}], lr = 1e-2)
 
 for node in model.executor.concept_vocab:
     answer = "yes" if node in gt_tree.nodes else "no"
     #eval_data.append({"program":"exist(filter(scene(),{}))".format(node),"answer":answer})
 #base_features = torch.cat([base_features, torch.ones([1,base_features.shape[1],config.concept_dim]) * EPS], dim = -1)
 
-for q in eval_data:print(q["program"],":",q["answer"])
+test_tree = nx.DiGraph()
+test_tree.add_node("root")
+test_tree.add_node("pot")
+test_tree.add_node("body")
+test_tree.add_node("container")
+test_tree.add_node("plant")
 
+test_tree.add_edge("root","pot")
+test_tree.add_edge("pot","body")
+test_tree.add_edge("body","container")
+test_tree.add_edge("body","plant")
+
+def gen_full_grounding(test_tree, mode = "full"):
+    test_dataset = {}
+    nodes = [];depths = []
+    sons = {}
+    def dfs(node, depth = 0):
+        nodes.append(node)
+        depths.append(depth)
+        depth += 1
+        for edge in test_tree.edges:
+            if edge[0] == node:
+                if node not in sons:sons[node] = [edge[1]]     
+                else:sons[node].append(edge[1]) 
+                dfs(edge[1], depth = depth)
+    dfs("root",0)
+    D = max(depths)-1
+    for d in range(D+1,0,-1):
+        if mode == "full":
+            test_data = []
+            available_nodes = []
+            top_nodes = []
+            for i,node in enumerate(nodes):
+                if depths[i] >= d:available_nodes.append(node)
+                if depths[i] == d: top_nodes.append(node)
+
+            # existence data
+            for exist_node in available_nodes:
+                test_data.append(
+                    {"program:":"exist(filter(scene(),{}))".format(exist_node),
+                    "answer":"yes"})
+            # hierarchy data
+            for top_node in top_nodes:
+                if top_node in sons:
+                    for son in sons[top_node]:
+                        test_data.append(
+                        {"program":"exist(filter(subtree(filter(scene(),{})),{}))".format(top_node, son),
+                         "answer":"yes"})
+            # count
+            for exist_node in available_nodes:
+                test_data.append(
+                    {"program:":"count(filter(scene(),{}))".format(exist_node),
+                    "answer":"1"})
+
+            test_dataset[str(D - d + 2)] = test_data
+        if mode == "sample":
+            test_dataset[str(D - d + 2)] = []
+    return test_dataset, D+1
+
+#for q in eval_data:print(q["program"],":",q["answer"])
+
+test_datasets, scene_depth = gen_full_grounding(test_tree)
+#print(test_datasets)
+
+def grounding(input_features,model, data, epochs ,phase):
+    optim = torch.optim.Adam([{'params': model.parameters()},
+                            {'params':base_features},
+                            {"params":input_features}], lr = 1e-2)
+    
+    for epoch in range(epochs):
+        loss = 0
+        scene = model.build_scene(input_features)
+        test_scores, test_features, test_connections = load_scene(scene,0)
+
+        kwargs = {"features":test_features, "end":test_scores, "connections":test_connections}
+
+        visualize_outputs(test_scores, test_features, test_connections, model.executor, kwargs)
+        plt.pause(0.001)
+
+        losses = []
+        for qa_pair in data:
+            q = qa_pair[list(qa_pair.keys())[0]]
+            answer = qa_pair["answer"]
+            q = model.executor.parse(q)
+            o = model.executor(q, **kwargs)
+
+            if answer in ["True","False"]:answer = {"True":"yes,","False":"no"}[answer]
+            if answer in ["1","2","3","4","5"]:answer = num2word(int(answer))
+        
+            if answer in numbers:
+                int_num = torch.tensor(numbers.index(answer)).float()
+                loss += + F.mse_loss(int_num ,o["end"])
+                losses.append(logit(F.mse_loss(int_num,o["end"]).detach()))
+            if answer in yes_or_no:
+                if answer == "yes":
+                    loss -= torch.log(torch.sigmoid(o["end"]))
+                    losses.append(logit(torch.sigmoid(o["end"])).detach())
+                else:
+                    loss -= torch.log(1 - torch.sigmoid(o["end"]))
+                    losses.append(logit(1 - torch.sigmoid(o["end"])).detach())
+        
+        sys.stdout.write("\rphase{}, epoch:{} loss:{}".format(phase,epoch,float(loss.detach())))
+
+        optim.zero_grad()
+        loss.backward()
+        optim.step()
+
+def freeze_parameters(model):
+    for param in model.parameters():
+        param.requires_grad = False
+def unfreeze_parameters(model):
+    for param in model.parameters():
+        param.requires_grad = True
+
+def freeze_hierarchy(model, depth):
+    size = len(model.scene_builder)
+    for i in range(1,size+1):
+        if i <= depth:unfreeze_parameters(model.hierarhcy_maps[i-1])
+        else:freeze_parameters(model.scene_builder)
+    model.executor.effective_level = depth
+
+test_features = Variable(torch.randn(1,3,100),requires_grad = True)
+
+for phase in range(1, scene_depth + 1):
+    print("Start on phase {}:".format(phase),len(test_datasets[str(phase)]))
+    freeze_hierarchy(model,depth = phase)
+    grounding(test_features,model,test_datasets[str(phase)], 400, phase)
+    print("Done in phase {}!".format(phase))
+
+"""
 for epoch in range(100000):
     loss = 0
     scene = model.build_scene(base_features)
@@ -227,3 +355,4 @@ for epoch in range(100000):
     optim.step()
 
 #for s in o["end"]:print(np.array((torch.sigmoid(s) + 0.5).int()))
+"""

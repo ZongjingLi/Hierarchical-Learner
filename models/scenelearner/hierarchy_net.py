@@ -16,6 +16,7 @@ class GraphConvolution(nn.Module):
             self.bias = nn.Parameter(torch.FloatTensor(out_features))
         else:
             self.register_parameter('bias', None)
+        self.unbalance = nn.Linear(in_features,in_features)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -27,7 +28,7 @@ class GraphConvolution(nn.Module):
     def forward(self, inputs, adj):
         B = inputs.shape[0]
 
-        support = torch.matmul(inputs, self.weight.unsqueeze(0).repeat(B,1,1))
+        support = torch.matmul(self.unbalance(inputs), self.weight.unsqueeze(0).repeat(B,1,1))
         output = torch.matmul(adj, support)     
         if self.bias is not None:
             return output + self.bias         
@@ -95,7 +96,8 @@ class HierarchyBuilder(nn.Module):
         if box:
             self.edge_predictor = FCBlock(128,3,input_dim * 2,1)
         else: self.edge_predictor = FCBlock(128,3,input_dim *2 ,1)
-        self.dropout = nn.Dropout(0.21)
+        self.dropout = nn.Dropout(0.01)
+        self.attention_slots = nn.Parameter(torch.randn([1,output_slots,input_dim]))
 
 
     def forward(self, x, scores, executor):
@@ -117,23 +119,25 @@ class HierarchyBuilder(nn.Module):
             factored_features = torch.cat([x,scores], dim = -1)
 
         # [Perform Convolution on Factored States]
-
-        adjs = self.edge_predictor(
+        GraphFactor = False
+        if GraphFactor:
+            adjs = self.edge_predictor(
             torch.cat([
                 factored_features.unsqueeze(1).repeat(1,N,1,1),
                 factored_features.unsqueeze(2).repeat(1,1,N,1),
             ], dim = -1)
-        ).squeeze(-1)
-        #adjs = torch.sigmoid(adjs)
-        adjs = self.dropout(adjs)
+            ).squeeze(-1)
+            adjs = torch.sigmoid(adjs)
+            adjs = self.dropout(adjs)
 
-        #adjs = torch.zeros([B, N, N])
-        graph_conv_masks = self.graph_conv(factored_features, adjs).permute([0,2,1])
-
+            adjs = torch.zeros([B, N, N])
+            graph_conv_feats = self.graph_conv(factored_features, adjs).permute([0,2,1])
+        else:
+            graph_conv_masks = torch.einsum("bnd,bmd->bmn",factored_features,self.attention_slots.repeat(B,1,1))
         # [Build Connection Between Input Features and Conv Features]
         #graph_conv_masks = torch.einsum("bnd,bmd->bnm")
         M = graph_conv_masks.shape[1]
-        scale = 65.0
+        scale = 1/math.sqrt(D)
 
         graph_conv_masks = F.softmax(scale * graph_conv_masks, dim = -1)
         
@@ -143,5 +147,7 @@ class HierarchyBuilder(nn.Module):
         g = g / g.sum( dim = 1, keepdim = True)
         #print(g,scores.squeeze(-1).repeat(1,M,1))
         g = torch.min(scores.squeeze(-1).repeat(1,M,1),g)
-        
-        return graph_conv_masks #[B,10,7]
+
+        #g = g /g.sum( dim = 1, keepdim = True)
+
+        return g#graph_conv_masks #[B,10,7]

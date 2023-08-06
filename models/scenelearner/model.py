@@ -53,6 +53,8 @@ class SceneLearner(nn.Module):
             self.hierarhcy_maps = nn.ModuleList([FCBlock(128,2,config.concept_dim,config.concept_dim)\
             for _ in range(len(config.hierarchy_construct)) ])
         self.feature2concept = nn.Linear(131,config.concept_dim)
+        self.effective_level = "all"
+        self.box_dim = config.concept_dim
     
     
     def build_scene(self,input_features):
@@ -64,12 +66,13 @@ class SceneLearner(nn.Module):
         scores = []
         features  = []
         connections = []
+        box_dim = self.box_dim
 
         input_scores = torch.ones([B,N,1])
         for i,builder in enumerate(self.scene_builder):
             #input_features [B,N,D]
             if self.is_box:
-                masks = builder(input_features[:,:,:100], input_scores, self.executor) # [B,M,N]
+                masks = builder(input_features[:,:,:box_dim], input_scores, self.executor) # [B,M,N]
             else:masks = builder(input_features, input_scores, self.executor) # [B,M,N]
             # [Build Scene Hierarchy]
 
@@ -79,8 +82,8 @@ class SceneLearner(nn.Module):
  
             feature = torch.einsum("bmn,bnd->bmd",masks,input_features) # hierarchy features # [B,M,D]
             if self.is_box:
-                feature = self.hierarhcy_maps[i](feature[:,:,:100])
-                feature = torch.cat([feature, torch.ones([1,feature.shape[1],100]) * EPS],dim = -1)
+                feature = self.hierarhcy_maps[i](feature[:,:,:box_dim])
+                feature = torch.cat([feature, torch.ones([1,feature.shape[1],box_dim]) * EPS],dim = -1)
             else:
                 feature = self.hierarhcy_maps[i](feature)
             # [Build Scores, Features, and Connections]
