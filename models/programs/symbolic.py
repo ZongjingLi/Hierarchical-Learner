@@ -371,7 +371,7 @@ class Parents(SymbolicProgram):
 
         return {**child, "end": tree_logits}
 
-class  Subtree(SymbolicProgram):
+class Subtree(SymbolicProgram):
     def __init__(self, *args):
         super().__init__(*args)
         self.child, = args
@@ -397,9 +397,9 @@ class  Subtree(SymbolicProgram):
 
             path_prob = torch.cat(path_prob, dim = -1)
    
-
+            
             tree_logits[i - 1] = path_prob.clamp(EPS,1-EPS)
             tree_logits[i - 1] = torch.log(tree_logits[i-1] / (1 - tree_logits[i-1]))
         
-        #tree_logits[0] = torch.log(torch.ones([len(tree_logits[-1])],device = device) * EPS)
+        tree_logits[-1] = torch.log(torch.ones([len(tree_logits[-1])],device = device) * EPS)
         return {**child, "end": tree_logits}

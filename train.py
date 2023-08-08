@@ -30,6 +30,14 @@ def unfreeze_parameters(model):
     for param in model.parameters():
         param.requires_grad = True
 
+def freeze_hierarchy(model, depth):
+    size = len(model.scene_builder)
+    for i in range(1,size+1):
+        if i <= depth:unfreeze_parameters(model.hierarhcy_maps[i-1])
+        else:freeze_parameters(model.scene_builder)
+    model.executor.effective_level = depth
+
+
 def log_imgs(imsize,pred_img,clusters,gt_img,writer,iter_):
 
     batch_size = pred_img.shape[0]
@@ -99,7 +107,10 @@ def train_pointcloud(train_model, config, args, phase = "1"):
 
     if args.freeze_perception:
          print("freezed the perception module: True")
-         freeze_parameters(train_model.scene_perception)
+         freeze_parameters(train_model.part_perception)
+    if phase not in ["0"]:
+       freeze_hierarchy(train_model,int(phase))
+         
     # [start the training process recording]
     itrs = 0
     start = time.time()
@@ -134,7 +145,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
                 answers = sample["answers"]
 
                 features = train_model.feature2concept(features)
-                if config.concept_type == "box":
+                if config.concept_type == "box" and False:
 
                     features = torch.cat([
                         features, 
@@ -191,9 +202,21 @@ def train_pointcloud(train_model, config, args, phase = "1"):
             writer.add_scalar("language_loss", language_loss, itrs)
 
             if not(itrs % args.checkpoint_itrs):
+                if query:
+                    scene_tree_path = sample["scene_tree"][-1]
+                    scene_tree = nx.read_gpickle(scene_tree_path)
+                    plt.figure("Comparison",figsize=(14,6))
+                    plt.subplot(121)
+                    plt.cla()
+                    pos = nx.layout.spring_layout(scene_tree)
+                    nx.draw_networkx(scene_tree,pos)
+                    plt.subplot(122)
+                    visualize_output_trees(scores, features, connections, model.executor, kwargs)
+                    plt.pause(0.001)
+
                 name = args.name
                 expr = args.training_mode
-                if query:
+                if 1:
                     torch.save(train_model.state_dict(), "checkpoints/{}_{}_{}_{}_phase{}.pth".format(name,expr,config.domain,config.perception,phase))
                 else:
                     torch.save(train_model.part_perception.state_dict(),"checkpoints/{}_part_percept_{}_{}_{}_phase{}.pth".format(name,expr,config.domain,config.perception,phase))
@@ -284,7 +307,7 @@ model = model.to(args.device)
 
 
 if args.pretrain_perception:
-    model.scene_perception.load_state_dict(torch.load(args.pretrain_perception, map_location = config.device))
+    model.load_state_dict(torch.load(args.pretrain_perception, map_location = config.device))
 
 def build_perception(size,length,device):
     edges = [[],[]]

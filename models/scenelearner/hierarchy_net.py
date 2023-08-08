@@ -131,18 +131,22 @@ class HierarchyBuilder(nn.Module):
             adjs = self.dropout(adjs)
 
             adjs = torch.zeros([B, N, N])
-            graph_conv_feats = self.graph_conv(factored_features, adjs).permute([0,2,1])
+
+            graph_conv_masks = self.graph_conv(factored_features, adjs).permute([0,2,1])
         else:
-            graph_conv_masks = torch.einsum("bnd,bmd->bmn",factored_features,self.attention_slots.repeat(B,1,1))
+            #factored_features = F.normalize(factored_features)
+            graph_conv_masks = torch.einsum("bnd,bmd->bmn",factored_features,\
+                self.attention_slots.repeat(B,1,1)) 
         # [Build Connection Between Input Features and Conv Features]
-        #graph_conv_masks = torch.einsum("bnd,bmd->bnm")
         M = graph_conv_masks.shape[1]
         scale = 1/math.sqrt(D)
+        #scale = 1
+        gamma = 0.5
 
-        graph_conv_masks = F.softmax(scale * graph_conv_masks, dim = -1)
-        
+        graph_conv_masks = F.softmax(scale * (graph_conv_masks), dim = -1)
 
-        g = graph_conv_masks 
+        g = graph_conv_masks
+        #g = torch.sigmoid((graph_conv_masks - 0.5) * 10)
         #graph_conv_masks = graph_conv_masks / torch.sum(graph_conv_masks,dim =1,keepdim = True)
         g = g / g.sum( dim = 1, keepdim = True)
         #print(g,scores.squeeze(-1).repeat(1,M,1))

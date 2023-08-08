@@ -81,7 +81,7 @@ def build_label(feature, executor):
     default_color = [1,0,0.4,float(prob)]
     return default_label, default_color
 
-def visualize_outputs(scores, features, connections,executor, kwargs):
+def visualize_output_trees(scores, features, connections,executor, kwargs):
     plt.cla()
     shapes = [score.shape[0] for score in scores]
     nodes = [];labels = [];colors = [];layouts = []
@@ -131,11 +131,10 @@ def load_scene(scene, k):
 
 # Set Level Grounding 
 EPS = 1e-5
-plt.figure("visualize",figsize=(6,6))
 
 TEST = 0
 
-config.hierarchy_construct = (4,3,1)
+config.hierarchy_construct = (4,3,2)
 
 config.temperature = 2.55
 model = SceneLearner(config)
@@ -171,8 +170,6 @@ base_features = Variable(torch.randn([1,3,100]), requires_grad=True)
 
 for node in model.executor.concept_vocab:
     answer = "yes" if node in gt_tree.nodes else "no"
-    #eval_data.append({"program":"exist(filter(scene(),{}))".format(node),"answer":answer})
-#base_features = torch.cat([base_features, torch.ones([1,base_features.shape[1],config.concept_dim]) * EPS], dim = -1)
 
 test_tree = nx.DiGraph()
 test_tree.add_node("root")
@@ -223,14 +220,17 @@ def gen_full_grounding(test_tree, mode = "full"):
                         {"program":"exist(filter(subtree(filter(scene(),{})),{}))".format(top_node, son),
                          "answer":"yes"})
             # count
-            for exist_node in available_nodes:
+            for node in model.executor.concept_vocab:
+                answer = "yes" if node in available_nodes else "no"
                 test_data.append(
-                    {"program:":"count(filter(scene(),{}))".format(exist_node),
-                    "answer":"1"})
+                    {"program:":"exist(filter(scene(),{}))".format(node),
+                    "answer":answer})
 
             test_dataset[str(D - d + 2)] = test_data
         if mode == "sample":
             test_dataset[str(D - d + 2)] = []
+    test_tree.remove_edge("root","pot")
+    test_tree.remove_node("root")
     return test_dataset, D+1
 
 #for q in eval_data:print(q["program"],":",q["answer"])
@@ -241,7 +241,7 @@ test_datasets, scene_depth = gen_full_grounding(test_tree)
 def grounding(input_features,model, data, epochs ,phase):
     optim = torch.optim.Adam([{'params': model.parameters()},
                             {'params':base_features},
-                            {"params":input_features}], lr = 1e-2)
+                            {"params":input_features}], lr = 1e-1)
     
     for epoch in range(epochs):
         loss = 0
@@ -249,7 +249,12 @@ def grounding(input_features,model, data, epochs ,phase):
         test_scores, test_features, test_connections = load_scene(scene,0)
 
         kwargs = {"features":test_features, "end":test_scores, "connections":test_connections}
-
+        plt.figure("Comparison",figsize=(14,6))
+        plt.subplot(121)
+        plt.cla()
+        pos = nx.layout.spring_layout(test_tree)
+        nx.draw_networkx(test_tree,pos)
+        plt.subplot(122)
         visualize_outputs(test_scores, test_features, test_connections, model.executor, kwargs)
         plt.pause(0.001)
 
@@ -265,21 +270,26 @@ def grounding(input_features,model, data, epochs ,phase):
         
             if answer in numbers:
                 int_num = torch.tensor(numbers.index(answer)).float()
-                loss += + F.mse_loss(int_num ,o["end"])
+                loss += + F.mse_loss(int_num ,o["end"]) 
                 losses.append(logit(F.mse_loss(int_num,o["end"]).detach()))
             if answer in yes_or_no:
                 if answer == "yes":
                     loss -= torch.log(torch.sigmoid(o["end"]))
+
                     losses.append(logit(torch.sigmoid(o["end"])).detach())
                 else:
                     loss -= torch.log(1 - torch.sigmoid(o["end"]))
                     losses.append(logit(1 - torch.sigmoid(o["end"])).detach())
+
         
         sys.stdout.write("\rphase{}, epoch:{} loss:{}".format(phase,epoch,float(loss.detach())))
 
         optim.zero_grad()
         loss.backward()
         optim.step()
+    for i,q in enumerate(data):
+        output = "\r{}:{} ->{}\n".format(q[list(q.keys())[0]],q["answer"],str(float(torch.sigmoid(losses[i]))))
+        sys.stdout.write(output)
 
 def freeze_parameters(model):
     for param in model.parameters():

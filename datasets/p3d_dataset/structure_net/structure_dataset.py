@@ -40,13 +40,14 @@ class StructureGroundingDataset(Dataset):
         if isinstance(category, str): cats = [category]
         else: cats = category
         self.valid_types = ["existence","hierarchy"]
-        if phase in [2,"2"]: self.vlaid_types.append("counting")
+        if phase in [2,"2"]: self.valid_types.append("counting")
         self.data_idx = []
         for cat in cats:
             with open(root + "/partnethiergeo/{}_geo/{}.txt".format(cat,split),"r") as split_idx:
                 split_idx = split_idx.readlines()
                 for i in range(len(split_idx)):
                     self.data_idx.append([cat, split_idx[i].strip()])
+        self.phase = phase
     
     def __len__(self):return len(self.data_idx)
 
@@ -55,8 +56,8 @@ class StructureGroundingDataset(Dataset):
         root = self.root 
         pc_path = root + "/partnet_geo_qa/{}/{}/point_cloud/{}.npy".format(category,self.split,index)
         point_cloud = np.load(pc_path)
-
-        qa_file = load_json(root + "/partnet_geo_qa/{}/{}/qa/{}.json".format(category,self.split,index))["all"]
+        phase = self.phase
+        qa_file = load_json(root + "/partnet_geo_qa/{}/{}/qa/{}.json".format(category,self.split,index))["all"][phase]
         questions   =  []
         answers     =  []
         programs    =  []
@@ -64,9 +65,8 @@ class StructureGroundingDataset(Dataset):
             if item["type"] in self.valid_types:
                 questions.append(item["question"])
                 answers.append(item["answer"])
-                programs.append(item["program"])
+                programs.append(item[list(item.keys())[0]])
         scene_tree = root + "/partnet_geo_qa/{}/{}/annotations/{}.pickle".format(category,self.split,index)
-        #nx.read_gpickle(\
             
 
         return {"point_cloud":point_cloud,"questions":questions,"answers":answers,\

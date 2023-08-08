@@ -260,7 +260,7 @@ def build_labels(h,voc):
         for child in h["children"]:
             build_labels(child, voc)
 
-def generate_structure(cat = "chair", idx = 176):
+def generate_structure(cat = "chair", idx = 176, full_grounding = True):
     pc_path = root + "/partnethiergeo/{}_geo/{}.npz".format(cat, idx)
     pc_data = np.load(pc_path)
 
@@ -271,83 +271,142 @@ def generate_structure(cat = "chair", idx = 176):
     hier_path = root + "/partnethiergeo/{}_hier/{}.json".format(cat, idx)
     hier_data = load_json(hier_path)
 
-    scene_tree = nx.Graph()
+    scene_tree = nx.DiGraph()
     uniform_tree = nx.DiGraph()
     def build(h,root):
         name = h["label"]+ "_" + np.random.choice([*"abcedfghijklmnopqrstuvwxyz"])
         uniform_name = h["label"]
-        scene_tree.add_node(name)
-        scene_tree.add_edge(root, name)
         uniform_tree.add_node(uniform_name)
         uniform_tree.add_edge(root[:-2],uniform_name)
-
         if "children" in h:
             for child in h["children"]:
                 build(child, name)
+    def build_st(h,root):
+        name = h["label"]
+        scene_tree.add_node(name)
+        scene_tree.add_edge(root, name)
+        if "children" in h:
+            for child in h["children"]:
+                build_st(child, name)
     build(hier_data, "root")
+    build_st(hier_data,"root")
 
     # [Build Question Ansering Pairs] build category labels in the scene
     scene_labels = [];  build_labels(hier_data,scene_labels)
     all_labels = ["pot","body","container","containing_things","liquid_or_soil",
                 "plant","other","lid","base","foot_base","foot"]
-    qa_pairs = []
-    # Existence Questions
-    # Template: Is there any {part} in the scene
-    # program: exist(filter(scene(),part))
-    num_existence = len(scene_labels)
-    for n in range(num_existence):
-        part = np.random.choice(scene_labels)
-        question = "Is there any {} in the scene?".format(part)
-        answer = "yes"
-        program = "exist(filter(scene(),{}))".format(part)
-        qa_pairs.append({"type":"existence","question":question,"program":program,"answer":answer})
+    if not full_grounding:
+        qa_pairs = []
+        # Existence Questions
+        # Template: Is there any {part} in the scene
+        # program: exist(filter(scene(),part))
+        num_existence = len(scene_labels)
+        for n in range(num_existence):
+            part = np.random.choice(scene_labels)
+            question = "Is there any {} in the scene?".format(part)
+            answer = "yes"
+            program = "exist(filter(scene(),{}))".format(part)
+            qa_pairs.append({"type":"existence","question":question,"program":program,"answer":answer})
 
-    for n in range(num_existence * 1):
-        part = np.random.choice(all_labels)
-        question = "Is there any {} in the scene??".format(part)
-        answer = "yes" if part in scene_labels else "no"
-        program = "exist(filter(scene(),{}))".format(part)
-        qa_pairs.append({"type":"existence","question":question,"program":program,"answer":answer})
+        for n in range(num_existence * 1):
+            part = np.random.choice(all_labels)
+            question = "Is there any {} in the scene??".format(part)
+            answer = "yes" if part in scene_labels else "no"
+            program = "exist(filter(scene(),{}))".format(part)
+            qa_pairs.append({"type":"existence","question":question,"program":program,"answer":answer})
 
-    # Hierarchy Questions
-    # Template: Does {part_1} contains {part_2}
-    # program: exist(filter(subtree(filter(scene(),part_1)),part_2))
-    num_hierarchy = len(scene_labels) * 2
-    for n in range(num_hierarchy):
-        if len(scene_labels) > 1:
-            part_1 = np.random.choice(scene_labels)
-            remain_labels = []
-            for label in scene_labels:
-                if label != part_1:remain_labels.append(label)
+        # Hierarchy Questions
+        # Template: Does {part_1} contains {part_2}
+        # program: exist(filter(subtree(filter(scene(),part_1)),part_2))
+        num_hierarchy = len(scene_labels) * 2
+        for n in range(num_hierarchy):
+            if len(scene_labels) > 1:
+                part_1 = np.random.choice(scene_labels)
+                remain_labels = []
+                for label in scene_labels:
+                    if label != part_1:remain_labels.append(label)
         
-            part_2 = np.random.choice(remain_labels)
-            question = "Does {} contains {}?".format(part_1, part_2)
-            answer = "yes" if nx.has_path(uniform_tree,part_1,part_2) else "no"
-            program = "exist(filter(subtree(filter(scene(),{})),{}))".format(part_1,part_2)
-            qa_pairs.append({"type":"hierarchy","question":question,"program":program,"answer":answer})
+                part_2 = np.random.choice(remain_labels)
+                question = "Does {} contains {}?".format(part_1, part_2)
+                answer = "yes" if nx.has_path(uniform_tree,part_1,part_2) else "no"
+                program = "exist(filter(subtree(filter(scene(),{})),{}))".format(part_1,part_2)
+                qa_pairs.append({"type":"hierarchy","question":question,"program":program,"answer":answer})
 
-    # Template: Is there any {part_1} in the {part_2}
+        # Template: Is there any {part_1} in the {part_2}
 
-    # Counting Questions
-    # Template: How many {part} are there in the scene
-    # program:  count(filter(scene(), part))
-    # answers:  number of specific part in the scene
-    num_counting = 5
-    for n in range(num_counting):
-        part = np.random.choice(scene_labels)
-        question = "How many {} are there in the scene".format(part)
-        answer = 0
-        for label in scene_labels:
-            if part == label:answer += 1
-        program = "count(filter(scene(),{}))".format(part)
-        qa_pairs.append({"type":"counting","question":question,"program":program,"answer":answer})
+        # Counting Questions
+        # Template: How many {part} are there in the scene
+        # program:  count(filter(scene(), part))
+        # answers:  number of specific part in the scene
+        num_counting = 5
+        for n in range(num_counting):
+            part = np.random.choice(scene_labels)
+            question = "How many {} are there in the scene".format(part)
+            answer = 0
+            for label in scene_labels:
+                if part == label:answer += 1
+            program = "count(filter(scene(),{}))".format(part)
+            qa_pairs.append({"type":"counting","question":question,"program":program,"answer":answer})
+    else:
+        qa_pairs,depth = gen_full_grounding(scene_tree,"full")
     
-    questions_answers = {"all":[
-        qa_pair for qa_pair in qa_pairs
-    ]}
+
+    questions_answers = {"all":qa_pairs,"depth":depth}
 
     return {"point_cloud":pc, "rgbs":None,"scene_tree":scene_tree,\
         "questions_answers":questions_answers}
+
+def gen_full_grounding(test_tree, mode = "full"):
+    test_dataset = {}
+    nodes = [];depths = []
+    sons = {}
+    def dfs(node, depth = 0):
+        nodes.append(node)
+        depths.append(depth)
+        depth += 1
+        for edge in test_tree.edges:
+            if edge[0] == node:
+                if node not in sons:sons[node] = [edge[1]]     
+                else:sons[node].append(edge[1]) 
+                dfs(edge[1], depth = depth)
+    dfs("root",0)
+    D = max(depths)-1
+    for d in range(D+1,0,-1):
+        if mode == "full":
+            test_data = []
+            available_nodes = []
+            top_nodes = []
+            for i,node in enumerate(nodes):
+                if depths[i] >= d:available_nodes.append(node)
+                if depths[i] == d: top_nodes.append(node)
+
+            # existence data
+            for exist_node in available_nodes:
+                test_data.append(
+                    {"program:":"exist(filter(scene(),{}))".format(exist_node),
+                    "answer":"yes","type":"existence","type":"hierarchy",
+                    "question":"Is there any {} in the scene?".format(exist_node)})
+            # hierarchy data
+            for top_node in top_nodes:
+                if top_node in sons:
+                    for son in sons[top_node]:
+                        test_data.append(
+                        {"program":"exist(filter(subtree(filter(scene(),{})),{}))".format(top_node, son),
+                         "answer":"yes","type":"hierarchy",
+                         "question":"exist(filter(subtree(filter(scene(),{})),{}))".format(top_node,son)})
+            # count
+            for node in available_nodes:
+                answer = "yes" if node in available_nodes else "no"
+                test_data.append(
+                    {"program:":"count(filter(scene(),{}))".format(node),
+                    "answer":"1","type":"counting",
+                    "question":"count(filter(scene(),{}))".format(node)})
+
+            test_dataset[str(D - d + 2)] = test_data
+        if mode == "sample":
+            test_dataset[str(D - d + 2)] = []
+
+    return test_dataset, D+1
 
 #outputs = generate_color(idx = 176)
 
