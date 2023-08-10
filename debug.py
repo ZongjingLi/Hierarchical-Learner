@@ -12,7 +12,7 @@ from datasets.p3d_dataset.structure_net.generate_structure_qa import dfs_point_c
 
 # [Create a Dataset]
 B = 1
-dataset = StructureGroundingDataset(config, category="vase", split = "train")
+dataset = StructureGroundingDataset(config, category="chair", split = "train")
 dataloader = DataLoader(dataset, batch_size = B, shuffle = True)
 
 # [Get A Sample Data]
@@ -34,7 +34,7 @@ def load_scene(scene, k):
 
 learner = SceneLearner(config)
 config.hierarchy_construct = (7,5,3)
-learner.load_state_dict(torch.load("checkpoints/VNL_3d_perception_structure_csqnet_phase0.pth",map_location = "cpu"))
+#learner.load_state_dict(torch.load("checkpoints/VNL_3d_perception_structure_csqnet_phase0.pth",map_location = "cpu"))
 optimizer = torch.optim.RMSprop(learner.parameters(), lr = 1e-4)
 
 print(sample["programs"])
@@ -45,7 +45,7 @@ print(sample["answers"])
 
 
 # plot the point cloud structure
-outputs = learner.scene_perception(sample)
+outputs = learner.part_perception(sample)
 point_cloud = sample["point_cloud"][0]
 masks = outputs["masks"][0]
 category = sample["category"]

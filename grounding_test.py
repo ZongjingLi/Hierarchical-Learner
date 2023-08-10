@@ -67,10 +67,8 @@ def get_prob(executor,feat,concept):
 
 def build_label(feature, executor):
     default_label = "x"
-    default_color = [0,0,0,0.1]
     predicates = executor.concept_vocab
     prob = 0.0
-    
     for predicate in predicates:
         pred_prob = get_prob(executor, feature, predicate)
         if pred_prob > prob:
@@ -78,15 +76,15 @@ def build_label(feature, executor):
             default_label = predicate
             #default_label = "{}_{:.2f}".format(predicate,float(pred_prob))
 
-    default_color = [1,0,0.4,float(prob)]
+    default_color = [64./255,74./255,121./255,float(prob)]
     return default_label, default_color
 
-def visualize_output_trees(scores, features, connections,executor, kwargs):
+def visualize_outputs(scores, features, connections,executor, kwargs):
     plt.cla()
     shapes = [score.shape[0] for score in scores]
     nodes = [];labels = [];colors = [];layouts = []
     # Initialize Scores
-    width = 0.9; height = 1.0
+    width = 0.6; height = 1.0
     plt.tick_params(left = False, right = False , labelleft = False ,
                 labelbottom = False, bottom = False)
 
@@ -99,14 +97,14 @@ def visualize_output_trees(scores, features, connections,executor, kwargs):
             if len(features[i].shape) == 3:
                 label,c = build_label(features[i][:,j], executor)
             else:label,c = build_label(features[i][j], executor)
-            c[0] = float(torch.linspace(0,1,len(scores))[i])
+            #c[0] = float(torch.linspace(0,1,len(scores))[i])
             c[-1] = min(float(scores[i][j]),c[-1])
             c[-1] = float(scores[i][j])
             label = "{}_{:.2f}".format(label,c[-1])
             labels.append(label);colors.append(c)
             # layout the locations
             layouts.append([xs[j],i * height])
-            plt.scatter(xs[j],i * height,color = c, linewidths=10)
+            plt.scatter(xs[j],i * height,color = c, linewidths=9)
             plt.text(xs[j], i * height - 0.01, label)
 
     for n in range(len(connections)):
@@ -134,7 +132,7 @@ EPS = 1e-5
 
 TEST = 0
 
-config.hierarchy_construct = (4,3,2)
+config.hierarchy_construct = (3,2,1)
 
 config.temperature = 2.55
 model = SceneLearner(config)
@@ -219,7 +217,16 @@ def gen_full_grounding(test_tree, mode = "full"):
                         test_data.append(
                         {"program":"exist(filter(subtree(filter(scene(),{})),{}))".format(top_node, son),
                          "answer":"yes"})
+
             # count
+            for node in available_nodes:
+                answer = "yes" if node in available_nodes else "no"
+                test_data.append(
+                    {"program:":"count(filter(scene(),{}))".format(node),
+                    "answer":"1","type":"counting",
+                    "question":"count(filter(scene(),{}))".format(node)})
+
+            # no count
             for node in model.executor.concept_vocab:
                 answer = "yes" if node in available_nodes else "no"
                 test_data.append(
@@ -241,7 +248,7 @@ test_datasets, scene_depth = gen_full_grounding(test_tree)
 def grounding(input_features,model, data, epochs ,phase):
     optim = torch.optim.Adam([{'params': model.parameters()},
                             {'params':base_features},
-                            {"params":input_features}], lr = 1e-1)
+                            {"params":input_features}], lr = 1e-2)
     
     for epoch in range(epochs):
         loss = 0
