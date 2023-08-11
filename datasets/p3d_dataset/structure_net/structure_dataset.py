@@ -39,7 +39,7 @@ class StructureGroundingDataset(Dataset):
         self.split = split
         if isinstance(category, str): cats = [category]
         else: cats = category
-        self.valid_types = ["existence","hierarchy"]
+        self.valid_types = ["existence","hierarchy","counting"]
         if phase in [2,"2"]: self.valid_types.append("counting")
         self.data_idx = []
         for cat in cats:

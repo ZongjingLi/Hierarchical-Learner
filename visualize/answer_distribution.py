@@ -287,7 +287,7 @@ def visualize_output_trees(scores, features, connections,executor, kwargs):
             else:label,c = build_label(features[i][j], executor)
             c[0] = float(torch.linspace(0,1,len(scores))[i])
             c[-1] = min(float(scores[i][j]),c[-1])
-            c[-1] = float(scores[i][j])
+            c[-1] = min(float(scores[i][j]),c[-1])
             label = "{}_{:.2f}".format(label,c[-1])
             labels.append(label);colors.append(c)
             # layout the locations

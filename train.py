@@ -95,8 +95,8 @@ def train_pointcloud(train_model, config, args, phase = "1"):
     # [joint training of perception and language]
     alpha = args.alpha
     beta  = args.beta
-    if args.training_mode == "query":alpha = 0
-    if args.training_mode == "perception":beta = 0
+    if args.training_mode == "query":alpha = 1
+    if args.training_mode == "perception":beta = 1
     
 
     # [setup the optimizer and lr schedulr]
@@ -176,13 +176,17 @@ def train_pointcloud(train_model, config, args, phase = "1"):
                         
                         if answer in numbers:
                             int_num = torch.tensor(numbers.index(answer)).float().to(args.device)
-                            language_loss += +F.mse_loss(int_num + 1,o["end"])
+                            language_loss += F.mse_loss(int_num ,o["end"])
+                            
                         if answer in yes_or_no:
-                            if answer == "yes":language_loss -= torch.log(torch.sigmoid(o["end"]))
-                            else:language_loss -= torch.log(1 - torch.sigmoid(o["end"]))
+                            if answer == "yes":
+                                language_loss -= torch.log(torch.sigmoid(o["end"]))
+                            else:
+                                language_loss -= torch.log(1 - torch.sigmoid(o["end"]))
                         #language_loss += (1 + torch.sigmoid( (o["end"] + g) )/r)
 
             # [calculate the working loss]
+
             working_loss = perception_loss * alpha + language_loss * beta
             try:epoch_loss += working_loss.detach().numpy()
             except:epoch_loss += working_loss
@@ -198,11 +202,31 @@ def train_pointcloud(train_model, config, args, phase = "1"):
             optimizer.step()
 
             writer.add_scalar("working_loss", working_loss, itrs)
-            writer.add_scalar("perception_loss", perception_loss, itrs)
+            writer.add_scalar("perception_loss", perception_loss , itrs)
             writer.add_scalar("language_loss", language_loss, itrs)
 
             if not(itrs % args.checkpoint_itrs):
                 if query:
+                    print("")
+                    for i,q in enumerate(qa_programs):
+                        answer = answers[i][b]
+                        q = train_model.executor.parse(q[0])
+                        o = train_model.executor(q, **kwargs)
+                        if answer in ["True","False"]:answer = {"True":"yes,","False":"no"}[answer]
+                        if answer in ["1","2","3","4","5"]:answer = num2word(int(answer))
+                        
+                        if answer in numbers:
+                            int_num = torch.tensor(numbers.index(answer)).float().to(args.device)
+                            language_loss += +F.mse_loss(int_num ,o["end"])
+                            print(q,answer,"mse:",float(F.mse_loss(int_num,o["end"]).detach().numpy()))
+                        if answer in yes_or_no:
+                            if answer == "yes":
+                                language_loss -= torch.log(torch.sigmoid(o["end"]))
+                                print(q,answer,"p:",float(torch.sigmoid(o["end"])))
+                            else:
+                                language_loss -= torch.log(1 - torch.sigmoid(o["end"]))
+                                print(q,answer,"p:",float(1 - torch.sigmoid(o["end"])))
+
                     scene_tree_path = sample["scene_tree"][-1]
                     scene_tree = nx.read_gpickle(scene_tree_path)
                     plt.figure("Comparison",figsize=(14,6))
@@ -286,7 +310,7 @@ argparser.add_argument("--effective_level",         default = 1)
 
 # [checkpoint location and savings]
 argparser.add_argument("--checkpoint_dir",          default = False)
-argparser.add_argument("--checkpoint_itrs",         default = 10)
+argparser.add_argument("--checkpoint_itrs",         default = 10,       type=int)
 argparser.add_argument("--pretrain_perception",     default = False)
 
 args = argparser.parse_args()
