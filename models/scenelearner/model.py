@@ -23,7 +23,10 @@ class SceneLearner(nn.Module):
         if config.perception == "local_psgnet":
             self.scene_perception = ControlSceneGraphNet(config)
         if config.perception == "valkyr":
-            self.scene_perception = ContrastNet(config) #EisenNet(config) #ConstructNet(config)
+            self.scene_perception = None
+            self.part_perception = ValkyrNet(config)
+            
+            #self.scene_perception = ValkyrNet(config) #EisenNet(config) #ConstructNet(config)
         if config.perception == "slot_attention":
             self.scene_perception = SlotAttentionParser(config.object_num, config.object_dim,5)
             self.part_perception = SlotAttention(config.part_num, config.object_dim,5)
