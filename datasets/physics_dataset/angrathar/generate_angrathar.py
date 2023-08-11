@@ -3,7 +3,7 @@ import pymunk
 import timeit
 import math
 
-SCREEN_WIDTH = 1800
+SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 800
 SCREEN_TITLE = "Shadows of Angrathar"
 
@@ -168,7 +168,7 @@ class MyGame(arcade.Window):
             shape.friction = 9999999.1
             self.space.add(body, shape)
 
-            sprite = CircleSprite(shape, "assets/ims/ice.png")
+            sprite = CircleSprite(shape, "assets/ice.png")
             self.sprite_list.append(sprite)
 
     def on_mouse_release(self, x, y, button, modifiers):

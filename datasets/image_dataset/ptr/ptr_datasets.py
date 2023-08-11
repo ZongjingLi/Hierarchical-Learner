@@ -8,13 +8,12 @@ class PTRData(Dataset):
         super().__init__()
         assert split in ["train","test","val"]
         self.split = split
-        self.root_dir = "/Users/melkor/Documents/datasets/ptr_data/PTR"
+        self.root_dir = "ptr_data/"
         self.img_transform = transforms.Compose(
             [transforms.ToTensor()]
         )
-
         self.resolution = resolution
-        self.file_names = os.listdir("/Users/melkor/Documents/datasets/ptr_data/PTR/{}/{}_images/".format(split,split))
+        self.file_names = os.listdir("/content/ptr_data/{}_images/{}_images/".format(split,split))
 
         if split == "train": # 518110
             pass
@@ -25,7 +24,7 @@ class PTRData(Dataset):
     def __getitem__(self,index): # 91720
         #data_bind = self.ptr_data[index]
         #idx = ("000000" + str(index))[-6:]
-        image_file_name = os.path.join(self.root_dir,self.split,"{}_images".format(self.split),self.file_names[index])
+        image_file_name = os.path.join(self.root_dir,"{}_images".format(self.split),"{}_images".format(self.split),self.file_names[index])
         #question = data_bind['question']
         #program = data_bind["program"]
         #answer = data_bind["answer"]

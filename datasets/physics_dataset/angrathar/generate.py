@@ -2,7 +2,7 @@ import taichi as ti
 
 ti.init()
 
-N = 8
+N = 12
 dt = 1e-5
 
 x = ti.Vector.field(2, dtype=ti.f32, shape=(N),needs_grad = True)
@@ -57,7 +57,7 @@ def sigma(t):return 1/(1 + math.exp(0-t))
 
 init()
 
-gui = ti.GUI("Visualize", res=(1024+512,1024))
+gui = ti.GUI("Visualize", res=(1024,1024))
 gui.background_color = 0x0d1926#0x204060
 while gui.running:
     for i in range(50):

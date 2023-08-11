@@ -296,6 +296,7 @@ if args.concept_type: config.concept_type = args.concept_type
 args.freeze_perception = bool(args.freeze_perception)
 args.lr = float(args.lr)
 
+
 if args.checkpoint_dir:
     #model = torch.load(args.checkpoint_dir, map_location = config.device)
     model = SceneLearner(config)

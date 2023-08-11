@@ -17,6 +17,10 @@ parser.add_argument("--root",               default = root_path)
 parser.add_argument("--dataset_root",       default = "/Users/melkor/Documents/datasets")
 parser.add_argument("--device",             default = device)
 parser.add_argument("--name",               default = "SceneGraphLearner")
+
+#parser.add_argument("--domain",             default = "ptr")
+#parser.add_argument("--category",           default = "")
+
 parser.add_argument("--domain",             default = "structure")
 parser.add_argument("--category",           default = ["vase"])
 
@@ -46,7 +50,7 @@ parser.add_argument("--node_feat_dim",      default = 100)
 parser.add_argument("--pose_code",          default = "nl-noR_T")
 
 # concept learner structure
-parser.add_argument("--object_num",         default = 7)
+parser.add_argument("--object_num",         default = 11)
 parser.add_argument("--part_num",           default = 3)
 parser.add_argument("--hierarchy_latent",   default = 128)
 parser.add_argument("--hierarchy_construct",default = [4,3,1])

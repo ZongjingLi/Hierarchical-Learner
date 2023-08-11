@@ -140,10 +140,11 @@ def train_image(train_model, config, args):
             perception_loss = 0
 
             betas = [1.0,1.0]
-            pred_img = None
-            if recons is not None: 
-                for i,pred_img in enumerate(recons[:]):
-                    perception_loss += torch.nn.functional.l1_loss(pred_img.flatten(), gt_ims.flatten()) * betas[i]
+            pred_img = recons
+            #pred_img = outputs["full_recons"]
+            #if recons is not None: 
+            #    for i,pred_img in enumerate(recons[:]):
+            perception_loss += torch.nn.functional.l1_loss(pred_img.flatten(), gt_ims.flatten()) * 1
             pred_img = recons
 
             if "full_recons" in outputs: perception_loss += torch.nn.functional.l1_loss(outputs["full_recons"].flatten(), gt_ims.flatten())
