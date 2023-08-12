@@ -150,7 +150,9 @@ class HierarchyBuilder(nn.Module):
         #graph_conv_masks = graph_conv_masks / torch.sum(graph_conv_masks,dim =1,keepdim = True)
         g = g / g.sum( dim = 1, keepdim = True)
         #print(g,scores.squeeze(-1).repeat(1,M,1))
-        g = torch.min(scores.squeeze(-1).repeat(1,M,1),g)
+
+        #print(scores.squeeze(-1).unsqueeze(1).repeat(1,M,1).shape,g.shape)
+        g = torch.min(scores.squeeze(-1).unsqueeze(1).repeat(1,M,1),g)
 
         #g = g /g.sum( dim = 1, keepdim = True)
 

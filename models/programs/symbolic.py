@@ -8,7 +8,7 @@ from utils import copy_dict,apply,EPS
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 inf = torch.tensor(int(1e8)).to(device)
-EPS = 1e-6
+EPS = 1e-7
 
 class SymbolicProgram(AbstractProgram):
     def __init__(self, *args):
@@ -97,7 +97,7 @@ class SymbolicProgram(AbstractProgram):
 
 
 class Scene(SymbolicProgram):
-    BIG_NUMBER = 10
+    BIG_NUMBER = 100
     
     def __init__(self, *args):
         super().__init__(*args)

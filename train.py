@@ -151,11 +151,11 @@ def train_pointcloud(train_model, config, args, phase = "1"):
                         features, 
                         EPS * torch.ones(B,features.shape[1],config.concept_dim)\
                         ],dim = -1)
-  
+                #print(features.shape)
                 scene = train_model.build_scene(features)
 
             
-                for b in range(B):
+                for b in range(features.shape[0]):
                     scores,features,connections = load_scene(scene, b)
 
                     kwargs = {"features":features,
@@ -187,7 +187,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
 
             # [calculate the working loss]
 
-            working_loss = perception_loss * alpha + language_loss * beta
+            working_loss = perception_loss + language_loss
             try:epoch_loss += working_loss.detach().numpy()
             except:epoch_loss += working_loss
             # [backprop and optimize parameters]
@@ -197,7 +197,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
 
             optimizer.zero_grad()
             working_loss.backward()
-            if clip_grads:
+            if clip_grads and 0:
                 torch.nn.utils.clip_grad_norm(train_model.executor.parameters() , -max_gradient, max_gradient)
             optimizer.step()
 
@@ -293,8 +293,8 @@ argparser.add_argument("--concept_type",            default = False)
 # [perception and language grounding training]
 argparser.add_argument("--perception",              default = "psgnet")
 argparser.add_argument("--training_mode",           default = "joint")
-argparser.add_argument("--alpha",                   default = 10.00)
-argparser.add_argument("--beta",                    default = 0.001)
+argparser.add_argument("--alpha",                   default = 1.00)
+argparser.add_argument("--beta",                    default = 1.0)
 argparser.add_argument("--loss_weights",            default = weights)
 
 # [additional training details]

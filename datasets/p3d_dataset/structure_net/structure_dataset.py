@@ -48,6 +48,7 @@ class StructureGroundingDataset(Dataset):
                 for i in range(len(split_idx)):
                     self.data_idx.append([cat, split_idx[i].strip()])
         self.phase = phase
+        self.qa_size = 8
     
     def __len__(self):return len(self.data_idx)
 
@@ -67,7 +68,12 @@ class StructureGroundingDataset(Dataset):
                 answers.append(item["answer"])
                 programs.append(item[list(item.keys())[0]])
         scene_tree = root + "/partnet_geo_qa/{}/{}/annotations/{}.pickle".format(category,self.split,index)
-            
 
-        return {"point_cloud":point_cloud,"questions":questions,"answers":answers,\
-            "scene_tree":scene_tree,"programs":programs,"index":index,"category":category}, 0
+        idxs = [np.random.choice(list(range(len(questions)))) for _ in range(self.qa_size)]
+
+        r_questions = [questions[i] for i in idxs]
+        r_answers   = [answers[i] for i in idxs]
+        r_programs  = [programs[i] for i in idxs]
+
+        return {"point_cloud":point_cloud,"questions":r_questions,"answers":r_answers,\
+            "scene_tree":scene_tree,"programs":r_programs,"index":index,"category":category}, 0
