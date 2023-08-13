@@ -48,7 +48,7 @@ class StructureGroundingDataset(Dataset):
                 for i in range(len(split_idx)):
                     self.data_idx.append([cat, split_idx[i].strip()])
         self.phase = phase
-        self.qa_size = 8
+        self.qa_size = 12
     
     def __len__(self):return len(self.data_idx)
 

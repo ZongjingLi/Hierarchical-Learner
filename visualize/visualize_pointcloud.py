@@ -13,6 +13,11 @@ def vis_pts(x, att=None, vis_fn="outputs/temp.png"):
         label_map = torch.argmax(att, dim=2)[idx].squeeze().cpu().numpy()
     vis_pts_att(pts, label_map, fn=vis_fn)
 
+def visualize_attention_masks(points, attn):
+    B,K,N = attn.shape
+    plt.figure("Attention Masks")
+    for i in range(K):
+        pass
 
 def vis_pts_att(pts, label_map, fn="outputs/temp.png", marker=".", alpha=0.9):
     # pts (n, d): numpy, d-dim point cloud

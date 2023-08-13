@@ -357,6 +357,8 @@ def generate_structure(cat = "chair", idx = 176, full_grounding = True):
         "questions_answers":questions_answers}
 
 def gen_full_grounding(test_tree, mode = "full"):
+    all_labels = ["pot","body","container","containing_things","liquid_or_soil",
+                "plant","other","lid","base","foot_base","foot"]
     test_dataset = {}
     nodes = [];depths = []
     sons = {}
@@ -401,6 +403,20 @@ def gen_full_grounding(test_tree, mode = "full"):
                     {"program:":"count(filter(scene(),{}))".format(node),
                     "answer":"1","type":"counting",
                     "question":"count(filter(scene(),{}))".format(node)})
+
+            # negatory
+            for node in all_labels:
+                answer = "yes" if node in available_nodes else "no"
+                test_data.append(
+                    {"program:":"exist(filter(scene(),{}))".format(node),
+                    "answer":answer,"type":"existence",
+                    "question":"count(filter(scene(),{}))".format(node)})
+
+            test_data.append(
+                {"program":"count(scene())",
+                "answer":str(len(available_nodes)),
+                "question":"How many parts are there?","type":"count"}
+            )
 
             test_dataset[str(D - d + 2)] = test_data
         if mode == "sample":

@@ -28,12 +28,9 @@ def run_arrows():
 class SquareArea:
     def __init__(self, start, end):
         super().__init__()
-        self.start = start
-        self.end = end
 
 def run_main():
     gui = ti.GUI("main",res = (400,400))
-
     while gui.running:
         for e in gui.get_events(gui.PRESS):
             if e.key == gui.ESCAPE:
