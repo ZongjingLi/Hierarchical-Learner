@@ -12,7 +12,7 @@ class ChamferLoss(nn.Module):
         super(ChamferLoss, self).__init__()
         self.use_cuda = torch.cuda.is_available()
 
-    def forward(self, gts, preds, atten=None, side="both", reduce=True):
+    def forward(self, gts, preds, atten=None, side="both", reduce=True, wts = None):
         # atten: BMN?
         P = self.batch_pairwise_dist(gts, preds)
         if atten is not None:
@@ -172,6 +172,7 @@ class MlpPointsFC(nn.Module):
     def forward(self, x):
         # x: BxC
         # pts; Bx3xM
-        pts = self.layer(x).reshape(-1, self.out_dim, self.num_points)
+        pts = self.layer(x)
+        pts = pts.reshape(-1, self.out_dim, self.num_points)
         return pts
 # decoder_utils.py ends here
