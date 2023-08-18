@@ -251,17 +251,24 @@ def train_image(train_model, config, args):
     print("\n\nExperiment {} : Training Completed.".format(args.name))
 
 
-def train_physic(model, config , args):
-
+def train_physics(train_model, config , args):
     if args.dataset == "physica":
         train_dataset = PhysicaDataset(config)
     if args.dataset == "industry":
         train_dataset = IndustryDataset(config)
 
     dataloader = DataLoader(train_dataset, shuffle = True, batch_size = config.batch_size)
+    if args.optimizer == "Adam":
+        optimizer = torch.optim.Adam(train_model.parameters(), lr = args.lr)
+    if args.optimizer == "RMSprop":
+        optimizer = torch.optim.RMSprop(train_model.parameters(), lr = args.lr)
 
     for epoch in range(config.epochs):
         for sample in dataloader:
-            sample
+            sample = sample["physics"] 
+            inputs = sample["inputs"] # [B,T,N,Fs] 
+            relations = sample["relations"] # [B,T,N,N,Fr]
+
+            outputs = train_model
 
     print("\n\nExperiment {}: Physics Training Completed.".format(args.name))
