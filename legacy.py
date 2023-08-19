@@ -266,9 +266,17 @@ def train_physics(train_model, config , args):
     for epoch in range(config.epochs):
         for sample in dataloader:
             sample = sample["physics"] 
-            inputs = sample["inputs"] # [B,T,N,Fs] 
+            inputs = sample["trajectory"] # [B,T,N,Fs] 
             relations = sample["relations"] # [B,T,N,N,Fr]
 
             outputs = train_model
+
+            trajectory = outputs["trajectory"]
+            losses = outputs["losses"]
+
+            working_loss = 0
+            for loss_name in losses:
+                pass
+            
 
     print("\n\nExperiment {}: Physics Training Completed.".format(args.name))
