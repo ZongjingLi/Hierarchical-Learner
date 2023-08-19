@@ -206,17 +206,17 @@ class PropNet(nn.Module):
         position_dim = config.position_dim
 
         # input: (1) attr (2) state (3) [optional] action
-        if config.pn_mode == "partial":
+        if config.observation == "partial":
             batch = False
             input_dim = attr_dim + state_dim
             
-            self.encoder = PropModule()
-            self.decoder = PropModule()
+            self.encoder = PropModule(config,input_dim, nf_effect, batch, residual)
+            self.decoder = PropModule(config,nf_effect, state_dim, batch, residual)
 
             input_dim = (nf_effect + action_dim) * config.history_window
             self.roller = ParticlePredictor(input_dim, nf_effect, nf_effect)
 
-        elif config.pn_mode == "full":
+        elif config.observation == "full":
             batch = True
             input_dim = attr_dim + state_dim + action_dim
             self.model = PropModule(config, input_dim, position_dim, batch, residual)

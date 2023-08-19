@@ -257,6 +257,15 @@ def train_physics(train_model, config , args):
     if args.dataset == "industry":
         train_dataset = IndustryDataset(config)
 
+    itrs = 0
+    start = time.time()
+    logging_root = "./logs"
+    ckpt_dir     = os.path.join(logging_root, 'checkpoints')
+    events_dir   = os.path.join(logging_root, 'events')
+    if not os.path.exists(ckpt_dir): os.makedirs(ckpt_dir)
+    if not os.path.exists(events_dir): os.makedirs(events_dir)
+    writer = SummaryWriter(events_dir)
+
     dataloader = DataLoader(train_dataset, shuffle = True, batch_size = config.batch_size)
     if args.optimizer == "Adam":
         optimizer = torch.optim.Adam(train_model.parameters(), lr = args.lr)
@@ -264,24 +273,38 @@ def train_physics(train_model, config , args):
         optimizer = torch.optim.RMSprop(train_model.parameters(), lr = args.lr)
 
     for epoch in range(config.epochs):
+        epoch_loss = 0
         for sample in dataloader:
-            sample = sample["physics"] 
-            inputs = sample["trajectory"] # [B,T,N,Fs] 
-            relations = sample["relations"] # [B,T,N,N,Fr]
+            itrs += 1
 
-            outputs = train_model
+            # [Collect Physics Inputs]
+            sample = sample["physics"] 
+            unary_inputs = sample["unary"] # [B,T,N,Fs] 
+            binary_relations = sample["binary"] # [B,T,N,N,Fr]
+
+            outputs = train_model(sample)
 
             trajectory = outputs["trajectory"]
             losses = outputs["losses"]
+
+            # [Weight each component of Working loss]
             working_loss = 0
             for loss_name in losses:
                 loss_value = losses[loss_name]
-                loss_weight = args.weights[loss_name]
-                working_loss += loss_value * working_loss
-
-            working_loss = 0
-            for loss_name in losses:
-                pass
+                if loss_name in losses: loss_weight = args.weights[loss_name]
+                else: loss_weight = 1.0
+                working_loss += loss_value * loss_weight
+                writer.add_scalar(loss_name, loss_value, itrs)
+            
+            # [Optimize Physics Model Parameters]
+            optimizer.zero_grad()
+            working_loss.backward()
+            optimizer.step()
+            
+            # [Calcualte the Epoch Loss and ETC]
+            epoch_loss += working_loss.detach()
+            sys.stdout.write ("\rEpoch: {}, Itrs: {} Loss: {} Time: {}"\
+                .format(epoch + 1, itrs, working_loss,datetime.timedelta(seconds=time.time() - start)))
             
 
     print("\n\nExperiment {}: Physics Training Completed.".format(args.name))

@@ -66,7 +66,10 @@ class NeuroParticleFilter(nn.Module):
         super().__init__()
 
         # [Stepper] aka prediction module
-        self.stepper = PropNet(config)
+        if config.physics_model == "PropNet":
+            self.stepper = PropNet(config)
+        if config.physics_model == "agtnet":
+            self.stepper = AgtNet(config)
 
         # [Matcher] ask observation module
         self.matcher = Matcher(config)

@@ -1,8 +1,7 @@
-ans = 0
-for a in [2,3,4,5]:
-    ans += (1./(a*(a+1)))
 
-ans += (1./(6 * 8))
+from models import *
+from config import *
 
-print(ans)
-print(17./48)
+model = AutoLearner(config)
+
+print(model)

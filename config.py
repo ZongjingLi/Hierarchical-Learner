@@ -73,7 +73,25 @@ parser.add_argument("--translator",         default = translator)
 # hiearchy graph generation
 parser.add_argument("--global_feature_dim", default = 66)
 
-# intuitive physics model and particle filter
+# [Physics] intuitive physics model and particle filter
+parser.add_argument("--nf_effect",          default = 10)
+parser.add_argument("--attr_dim",           default = 10)
+parser.add_argument("--state_dim",          default = 7)
+parser.add_argument("--action_dim",         default = 4)
+parser.add_argument("--position_dim",       default = 2)
+parser.add_argument("--observation",        default = "partial")
+parser.add_argument("--relation_dim",       default = 3)
+parser.add_argument("--nf_particle",        default = 30)
+parser.add_argument("--nf_relation",        default = 5)
+parser.add_argument("--history_window",     default = 5)
+
+# [Neuro Particle Filter]
+parser.add_argument("--physics_model",      default = "agtnet")
+parser.add_argument("--type_penalty",       default = 1.)
+parser.add_argument("--distance_penalty",   default = 1.)
+parser.add_argument("--color_penalty",      default = 1.)
+parser.add_argument("--distance_threshold", default = 0.3)
+parser.add_argument("--base_penalty",       default = 1.)
 
 config = parser.parse_args(args = [])
 
