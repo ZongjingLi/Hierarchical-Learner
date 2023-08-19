@@ -273,6 +273,11 @@ def train_physics(train_model, config , args):
 
             trajectory = outputs["trajectory"]
             losses = outputs["losses"]
+            working_loss = 0
+            for loss_name in losses:
+                loss_value = losses[loss_name]
+                loss_weight = args.weights[loss_name]
+                working_loss += loss_value * working_loss
 
             working_loss = 0
             for loss_name in losses:
