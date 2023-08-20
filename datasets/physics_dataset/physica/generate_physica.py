@@ -43,7 +43,7 @@ def make_body(env, name, x, y, friction = 43.9, mass = 30.0, box_shape = None):
     sprite = BoxSprite(shape, "/Users/melkor/Documents/datasets/PatchWork/{}".format(name), width=box_shape[0], height=box_shape[1])
     env.sprite_list.append(sprite)
 
-class MyGame(arcade.Window):
+class PhysicaEnv(arcade.Window):
     """ Main application class. """
 
     def __init__(self, width, height, title):
@@ -84,7 +84,7 @@ class MyGame(arcade.Window):
         self.space.add(shape, body)
         self.static_lines.append(shape)
 
-
+        self.data = []
 
         size = 32
 
@@ -262,17 +262,23 @@ class MyGame(arcade.Window):
             self.shape_being_dragged.shape.body.velocity = 0, 0
 
         # Move sprites to where physics objects are
+        frame_data = []
         for sprite in self.sprite_list:
             sprite.center_x = sprite.pymunk_shape.body.position.x
             sprite.center_y = sprite.pymunk_shape.body.position.y
+            x,y = sprite.pymunk_shape.body.position
+            vx, vy = sprite.pymunk_shape.body.velocity
             sprite.angle = math.degrees(sprite.pymunk_shape.body.angle)
+            theta = math.degrees(sprite.pymunk_shape.body.angle)
+            frame_data.append([x, y, vx, vy, theta])
+        self.data.append(frame_data)
 
         # Save the time it took to do this.
         self.processing_time = timeit.default_timer() - start_time
 
 
 def main():
-    MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    PhysicaEnv(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
     arcade.run()
 
