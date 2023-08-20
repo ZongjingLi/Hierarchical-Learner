@@ -7,5 +7,7 @@ public class main {
         System.out.println("What is that Thing?");
         frameWriter fw = new frameWriter();
         System.out.println(String.format("id is: %d",fw.getId()));
+
+        Polygon poly = new Polygon();
     }
 }
