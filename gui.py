@@ -30,7 +30,7 @@ class SquareArea:
         super().__init__()
 
 def run_main():
-    gui = ti.GUI("main",res = (400,400))
+    gui = ti.GUI("main",res = (1400,1400))
     while gui.running:
         for e in gui.get_events(gui.PRESS):
             if e.key == gui.ESCAPE:

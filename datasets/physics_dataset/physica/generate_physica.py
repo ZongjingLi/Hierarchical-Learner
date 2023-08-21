@@ -51,6 +51,7 @@ class PhysicaEnv(arcade.Window):
 
         #arcade.set_background_color((61,77,86))
         arcade.set_background_color((1,47,65))
+        arcade.set_background_color((13,25,38))
         self.paused = False
         self.hold = 0
 
@@ -95,13 +96,13 @@ class PhysicaEnv(arcade.Window):
                 make_body(self, "crafting_table_gondolin_bottom.png",
                  300 + column* size,
                   size * row + (floor_height + size / 2), friction = 500, mass =100)
-
+        """
         for row in range(5):
             for column in range(4):
                 make_body(self, "wood_pillar1_laegrim_face.png",
                  500 + column* size,
                   size * row + (floor_height + size / 2), friction = 100, mass =500)
-        """
+        
         for row in range(8):
             for column in range(4):
                 make_body(self, "crafting_table_gondolin_bottom.png",
