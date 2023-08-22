@@ -21,7 +21,7 @@ class ParticleEncoder(nn.Module):
         x = self.activate(x)
         x = self.linear2(x)
         x = self.activate(x)
-        x = x.reshape(B, N, D)
+        x = x.reshape(B, N, self.output_dim)
         return x
 
 class ParticlePredictor(nn.Module):
@@ -70,7 +70,7 @@ class Propagator(nn.Module):
             x = self.linear_0(inputs.reshape(B * N, D))
             x = F.relu(x + res.reshape(B * N, self.output_dim))
         else:
-            x = F.relu(self.linear_0([B * N, D]))
+            x = F.relu(self.linear_0(inputs.reshape(B * N, D)))
         return x.reshape(B, N, self.output_dim)
 
 class PropModule(nn.Module):
@@ -83,7 +83,7 @@ class PropModule(nn.Module):
 
         relation_dim = config.relation_dim
 
-        effect_dim = pfd
+        pfd = config.prop_feature_dim
 
         particle_feature_dim = config.particle_feature_dim
         relation_feature_dim = config.relation_feature_dim
@@ -91,6 +91,7 @@ class PropModule(nn.Module):
         pfd = prop_feature_dim
 
         self.residual = residual
+        self.effect_dim = config.prop_feature_dim
 
         self.particle_encoder = ParticleEncoder(input_dim,pfd, particle_feature_dim)
         self.relation_encoder = RelationEncoder(2*input_dim + relation_dim,\
@@ -117,9 +118,10 @@ class PropModule(nn.Module):
         particle_encode = self.particle_encoder(state)
 
         # [Relation Encoder] calculate the relation encoding
-        relation_encode = self.relation_encoder(torch.cat([
-            [state_r, state_s, Ra], 2
-        ]))
+        #print(state_r.shape,state_s.shape, Ra.shape)
+        relation_encode = self.relation_encoder(
+            torch.cat([state_r, state_s, Ra], 2)
+        )
 
         for i in range(steps):
             if self.batch:
@@ -152,6 +154,7 @@ class AgtNet(nn.Module):
         
         position_dim = config.position_dim
         state_dim = config.state_dim
+        attr_dim = config.attr_dim
         action_dim = config.action_dim
         particle_fd = config.particle_feature_dim
         relation_fd = config.relation_feature_dim
@@ -163,7 +166,7 @@ class AgtNet(nn.Module):
     
         if observation == "full":
             batch = True
-            input_dim = state_dim + action_dim
+            input_dim = state_dim + action_dim + attr_dim
             self.model = PropModule(config, input_dim, position_dim, batch, residual)
 
     def encode(self, data, steps):
@@ -187,7 +190,6 @@ class AgtNet(nn.Module):
     
     def forward(self, data, steps, action = None):
         # used only for fully observable case
-        config = self.config
         state, Rr, Rs, Ra = data
         if action is not None:
             state = torch.cat([state, action], 2)

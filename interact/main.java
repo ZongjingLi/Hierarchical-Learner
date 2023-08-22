@@ -14,5 +14,9 @@ public class main {
 
         System.out.println(poly.addEdge("Node1", "Node2"));
         System.out.println(poly.addEdge("Node2","not a Node"));
+        Point p2 = new Point(2.0,1.0);
+
+        System.out.println(p2 == p1);
+        System.out.println(p1 == p2);
     }
 }

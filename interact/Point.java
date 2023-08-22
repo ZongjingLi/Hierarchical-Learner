@@ -14,4 +14,8 @@ public class Point {
         return String.format("Point: %.2f %.2f",this.x,this.y);
     }
 
+    public boolean compare(Point other) {
+        return this.x == other.x && this.y == other.y;
+    }
+
 }

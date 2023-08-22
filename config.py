@@ -76,6 +76,7 @@ parser.add_argument("--global_feature_dim", default = 66)
 # [Physics] intuitive physics model and particle filter
 parser.add_argument("--position_dim",           default = 3)
 parser.add_argument("--state_dim",              default = 6)
+parser.add_argument("--attr_dim",               default = 4)
 parser.add_argument("--relation_dim",           default = 1)
 parser.add_argument("--particle_feature_dim",   default = 128)
 parser.add_argument("--relation_feature_dim",   default = 100)
@@ -83,7 +84,7 @@ parser.add_argument("--prop_feature_dim",       default = 132)
 parser.add_argument("--history_window",         default = 5)
 parser.add_argument("--roll_outs",              default = 5)
 parser.add_argument("--action_dim",         default = 0)
-parser.add_argument("--observation",        default = "partial")
+parser.add_argument("--observation",        default = "full")
 
 """
 parser.add_argument("--nf_effect",          default = 10)
