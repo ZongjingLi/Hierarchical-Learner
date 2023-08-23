@@ -75,14 +75,12 @@ nx.draw_networkx(scene_tree)
 
 plt.show()
 
-freeze_parameters(learner.scene_perception)
-
-
+freeze_parameters(learner.part_perception)
 
 visualize = True
 for epoch in range(10000):
     g = -0.5; r = 0.3
-    outputs = learner.scene_perception(sample)
+    outputs = learner.part_perception(sample)
 
     features,masks,positions = outputs["features"],outputs["masks"],outputs["positions"] 
 
@@ -96,7 +94,7 @@ for epoch in range(10000):
 
 
     features = learner.feature2concept(features)
-    features = torch.cat([features, torch.ones([1,features.shape[1],config.concept_dim]) * EPS], dim = -1)
+    #features = torch.cat([features, torch.ones([1,features.shape[1],config.concept_dim]) * EPS], dim = -1)
 
     qa_programs = sample["programs"]
     answers = sample["answers"]

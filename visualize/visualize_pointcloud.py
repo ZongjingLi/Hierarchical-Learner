@@ -14,14 +14,16 @@ def vis_pts(x, att=None, vis_fn="outputs/temp.png"):
     vis_pts_att(pts, label_map, fn=vis_fn)
 
 def visualize_attention_masks(points, attn):
-    B,K,N = attn.shape
+    B,K,N = attn.shape # [BxKxN]
     plt.figure("Attention Masks")
     for i in range(K):
         pass
 
 def visualize_pointcloud_components(pts,attn):
-    plt.figure("Point Cloud Components")
-    pass
+    B,K,N = attn.shape
+    fig = plt.figure("Point Cloud Components")
+    for k in range(K):
+        ax = fig.add_subplot(1, N , 1 + i, projection='3d')
 
 def vis_pts_att(pts, label_map, fn="outputs/temp.png", marker=".", alpha=0.9):
     # pts (n, d): numpy, d-dim point cloud

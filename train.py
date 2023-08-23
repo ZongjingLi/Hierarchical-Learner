@@ -135,6 +135,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
             for loss_name in outputs["loss"]:
                 weight = args.loss_weights[loss_name]
                 perception_loss += outputs["loss"][loss_name] * weight
+            components = outputs["components"]
 
             # [Language Loss]
             language_loss = 0
@@ -240,8 +241,12 @@ def train_pointcloud(train_model, config, args, phase = "1"):
 
                 name = args.name
                 expr = args.training_mode
+                field_class = "3dpc"
                 if 1:
-                    torch.save(train_model.state_dict(), "checkpoints/{}_{}_{}_{}_phase{}.pth".format(name,expr,config.domain,config.perception,phase))
+                    torch.save(train_model.state_dict(),\
+                        "checkpoints/scenelearner/{}/{}_{}_{}_{}_phase{}.pth".format(field_class,name,expr,config.domain,config.perception,phase))
+                    torch.save(train_model,\
+                        "checkpoints/scenelearner/{}/{}_{}_{}_{}_phase{}.ckpt".format(field_class,name,expr,config.domain,config.perception,phase))
                 else:
                     torch.save(train_model.part_perception.state_dict(),"checkpoints/{}_part_percept_{}_{}_{}_phase{}.pth".format(name,expr,config.domain,config.perception,phase))
                 if args.dataset == "Objects3d":
@@ -267,6 +272,11 @@ def train_pointcloud(train_model, config, args, phase = "1"):
                     np.save("outputs/recon_point_cloud.npy",np.array(recon_pc.cpu().detach()))
                     np.save("outputs/point_cloud.npy",np.array(point_cloud.cpu().detach()))
                     np.save("outputs/masks.npy",np.array(masks.cpu().detach()))
+
+                    if components is not None:
+                        np.save("outputs/splits.npy",np.array(components.cpu().detach()))
+
+                    # Save Components
                     
             itrs += 1
 
@@ -324,7 +334,9 @@ args.lr = float(args.lr)
 if args.checkpoint_dir:
     #model = torch.load(args.checkpoint_dir, map_location = config.device)
     model = SceneLearner(config)
-    model.load_state_dict(torch.load(args.checkpoint_dir, map_location=args.device))
+    if "ckpt" in args.checkpoint_dir[-4:]:
+        model = torch.load(args.checkpoint_dir, map_location = args.device)
+    else: model.load_state_dict(torch.load(args.checkpoint_dir, map_location=args.device))
 else:
     print("No checkpoint to load and creating a new model instance")
     model = SceneLearner(config)

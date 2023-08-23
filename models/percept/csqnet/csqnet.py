@@ -77,7 +77,7 @@ class CSQNet(nn.Module):
         if config.concept_projection:
             self.feature2concept = nn.Linear(config.latent_dim, concept_dim//2) # Deprecated
         self.scaling = 1.0
-        self.split_components = False
+        self.split_components = True
     
 
 
@@ -101,12 +101,15 @@ class CSQNet(nn.Module):
         y = self.decoder(gc.transpose(2, 1).squeeze(-1), return_splits = self.split_components)
 
         chamfer_loss = 0.
+        splits = None
         if self.split_components:
-
-            for i,comp_pts in enumerate(y):
-                wts = attention[:,0,i:i+1,:,0]
-                pc_comp = pc / (1e-4 + wts)
-                chamfer_loss += self.chamfer_loss(pc_comp, comp_pts) # Loss
+            splits = [t.unsqueeze(1) for t in y]
+            splits = torch.cat(splits, dim = 1).permute(0,1,3,2)
+            #for i,comp_pts in enumerate(y):
+            #    wts = attention[:,0,i:i+1,:,0]
+            #    pc_comp = pc / (1e-4 + wts)
+            #    chamfer_loss += self.chamfer_loss(pc_comp, comp_pts) # Loss
+            y = torch.cat(y, dim = 2)
 
         else: chamfer_loss += self.chamfer_loss(pc.permute(0,2,1),y)
 
@@ -121,5 +124,6 @@ class CSQNet(nn.Module):
 
         losses = {"chamfer":chamfer_loss,"reconstruction":0.0,"localization":loc_loss,"equillibrium_loss":equi_loss}
         outputs = {"loss":losses,"recon_pc":y,"masks":attention,"abstract_scene":scene_construct,\
-            "features":gc.permute(0,2,1,3).squeeze(-1),"positions":pose_locals.permute(0,2,1,3).squeeze(-1)}
+            "features":gc.permute(0,2,1,3).squeeze(-1),"positions":pose_locals.permute(0,2,1,3).squeeze(-1),
+            "components":splits}
         return outputs

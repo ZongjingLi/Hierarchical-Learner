@@ -80,7 +80,7 @@ evalparser.add_argument("--shuffle",            default = True)
 evalparser.add_argument("--perception",         default = "point_net")
 evalparser.add_argument("--training_mode",      default = "3d_perception")
 evalparser.add_argument("--loss_weights",       default = weights)
-evalparser.add_argument("--checkpoint_dir",     default = "checkpoints/KFT_3d_perception_toy_point_net_phase1.pth")
+evalparser.add_argument("--checkpoint_dir",     default = "checkpoints/scenelearner/3dpc/KFT_3d_perception_toy_point_net_phase1.pth")
 
 evalargs = evalparser.parse_args()
 config.perception = evalargs.perception
