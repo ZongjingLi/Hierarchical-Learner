@@ -4,7 +4,7 @@ import torch
 import argparse
 
 visparser = argparse.ArgumentParser()
-visparser.add_argument("--model",           default = "point_net")
+visparser.add_argument("--model",           default = "csq_net")
 visconfig = visparser.parse_args()
 
 def hex2rgb(h):
