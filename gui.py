@@ -144,7 +144,7 @@ def visualize_pointcloud_components(pts,view_name = None, view = None):
             axis.set_pane_color((1.0, 1.0, 1.0, 0.0))
 
         ax.set_axis_off()
-        ax.view_init(elev = 100+view, azim = -90)
+        ax.view_init(elev = 100 , azim = -90 + view, roll = view)
       
         for j in range(N):
             coords = pts[j]
@@ -154,7 +154,7 @@ def visualize_pointcloud_components(pts,view_name = None, view = None):
         coords = pts[i]
         colors = namo_colors[i]
         full_ax.scatter(coords[:,0],coords[:,1],coords[:,2], c = colors)
-        full_ax.view_init(elev = 100+view, azim = -90)
+        full_ax.view_init(elev = 100 , azim = -90 + view, roll = view)
     if view_name is None:
         fig.savefig("outputs/pc_components.png")
         full_fig.savefig("outputs/pc_full_components.png")
@@ -200,16 +200,20 @@ input_pcs = [(coords,coords_colors),(pc,pc_colors)]
 visualize_pointcloud(input_pcs)
 plt.show()
 
-
 splits = np.load("outputs/splits.npy")[0]
 # Visualize Components
-frames= []
-for i in range(90):
-    visualize_pointcloud_components(splits, view_name = "KFT{}".format(i), view = i)
+images = []
+full_images = []
+N_frames = 10
+for i in tqdm(range(N_frames)):
+    visualize_pointcloud_components(splits, view_name = "KFT{}".format(i), view = i * 360.0/N_frames)
+    frame = plt.imread("outputs/details/{}_pc_components.png".format("KFT{}".format(i)))
+    images.append(frame)    
     frame = plt.imread("outputs/details/{}_pc_full_components.png".format("KFT{}".format(i)))
-    frames.append(frame)
+    full_images.append(frame)
 
 from visualize import make_gif
 
-make_gif(frames, "outputs/recon_components.gif",duration = 0.04)
+make_gif(images, "outputs/recon_components.gif",duration = 0.1)
+make_gif(full_images, "outputs/full_recon_components.gif",duration = 0.1)
 #plt.show()

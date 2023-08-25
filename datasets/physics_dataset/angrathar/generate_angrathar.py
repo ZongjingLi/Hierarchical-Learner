@@ -168,7 +168,7 @@ class MyGame(arcade.Window):
             shape.friction = 9999999.1
             self.space.add(body, shape)
 
-            sprite = CircleSprite(shape, "assets/ice.png")
+            sprite = CircleSprite(shape, "assets/images/ice.png")
             self.sprite_list.append(sprite)
 
     def on_mouse_release(self, x, y, button, modifiers):
