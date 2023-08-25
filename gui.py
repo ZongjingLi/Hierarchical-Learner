@@ -102,7 +102,7 @@ def vis_pts(x, att=None, vis_fn="outputs/temp.png"):
         label_map = torch.argmax(att, dim=2)[idx].squeeze().cpu().numpy()
     vis_pts_att(pts, label_map, fn=vis_fn)
 
-def visualize_pointcloud_components(pts):
+def visualize_pointcloud_components(pts,view_name = None, view = None):
     namo_colors = [
     '#1f77b4',  # muted blue
     '#005073',  # safety orange
@@ -144,7 +144,7 @@ def visualize_pointcloud_components(pts):
             axis.set_pane_color((1.0, 1.0, 1.0, 0.0))
 
         ax.set_axis_off()
-        ax.view_init(elev = 100, azim = -90)
+        ax.view_init(elev = 100+view, azim = -90)
       
         for j in range(N):
             coords = pts[j]
@@ -154,9 +154,13 @@ def visualize_pointcloud_components(pts):
         coords = pts[i]
         colors = namo_colors[i]
         full_ax.scatter(coords[:,0],coords[:,1],coords[:,2], c = colors)
-        full_ax.view_init(elev = 100, azim = -90)
-    fig.savefig("outputs/pc_components.png")
-    full_fig.savefig("outputs/pc_full_components.png")
+        full_ax.view_init(elev = 100+view, azim = -90)
+    if view_name is None:
+        fig.savefig("outputs/pc_components.png")
+        full_fig.savefig("outputs/pc_full_components.png")
+    else:
+        fig.savefig("outputs/details/{}_pc_components.png".format(view_name))
+        full_fig.savefig("outputs/details/{}_pc_full_components.png".format(view_name))
 
 import matplotlib.pyplot as plt
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -199,5 +203,13 @@ plt.show()
 
 splits = np.load("outputs/splits.npy")[0]
 # Visualize Components
-visualize_pointcloud_components(splits)
-plt.show()
+frames= []
+for i in range(90):
+    visualize_pointcloud_components(splits, view_name = "KFT{}".format(i), view = i)
+    frame = plt.imread("outputs/details/{}_pc_full_components.png".format("KFT{}".format(i)))
+    frames.append(frame)
+
+from visualize import make_gif
+
+make_gif(frames, "outputs/recon_components.gif",duration = 0.04)
+#plt.show()
