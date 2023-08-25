@@ -110,6 +110,8 @@ class CSQNet(nn.Module):
             #    pc_comp = pc / (1e-4 + wts)
             #    chamfer_loss += self.chamfer_loss(pc_comp, comp_pts) # Loss
             y = torch.cat(y, dim = 2)
+            chamfer_loss += self.chamfer_loss(pc,y)
+
 
         else: chamfer_loss += self.chamfer_loss(pc.permute(0,2,1),y)
 
