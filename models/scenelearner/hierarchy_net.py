@@ -157,3 +157,10 @@ class HierarchyBuilder(nn.Module):
         #g = g /g.sum( dim = 1, keepdim = True)
 
         return g#graph_conv_masks #[B,10,7]
+
+class DifferntialPool(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+
+    def forward(self, x):
+        return  x

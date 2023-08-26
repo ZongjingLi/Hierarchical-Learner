@@ -2,34 +2,56 @@
     <head>
         <title>Hierarchy Learner</title>     
         <link rel="stylesheet" href="assets/css/display_style.css">
+        <link rel="stylesheet" href="assets/treeData.min.css">
     </head>
     <body>
         <main>
-            Snow of Northrend
+            <header>
+                <h1>Hierarchial Concept Learner</h1>
+            </header>
             <div class="compare_grid">
                 <div class="perception_grid">
-                    <div>
-                        <img src="outputs/full_recon_components.gif", width = "256", height = "256">
-                        <img src="outputs/pc.png", height = "256">
-                    </div>
-                    <div>
-                        <img src="outputs/recon_components.gif", height="384">
+                    <div class="io-contrast">
+                        <div>
+                            <img src="outputs/full_recon_components.gif", width = "256", height = "256">
+                            <img src="outputs/pc.png", height = "256">
+
+                        </div>
+                        <div>
+                            <img src="outputs/recon_components.gif", height="384">
+                        </div>
                     </div>
                 </div>
                 <div class="language_grid">
                     
-                    <div>
-                        Nothing Here Yet
-                        <img src="outputs/full_recon_components.gif">
+                    <div >
+                        <div id = 'graph'>
+                        </div>
+                        <div class="recon">
+                            Title of Recon
+                            <img src="outputs/full_recon_components.gif">
+                        </div>
                     </div>
-                    <div>
-                        <div class="question">Is there any leg in the object</div>
-                        <button><</button>
-                        <button>></button>
-                    </div>
-
                 </div>
             </div>
         </main>
     </body>
 </html>
+
+<script type="text/javascript" src="assets/treeData.js"></script>
+<script>
+    var tree = {
+         r : {value : "Tree Root"},
+         a : {value : "a", parent : "r"},
+         b : {value : "b", parent : "a"},
+         c : {value : "c", parent : "b"},
+         d : {value : "d", parent : "a"},
+         e : {value : "e", parent : "b"},
+         f : {value : "f", parent : "d"},
+         g : {value : "g", parent : "d"},
+    };
+    
+    
+    //*TreeData(tree, "#tree");
+    TreeData(tree, "#graph")
+    </script>

@@ -5,7 +5,7 @@ model = SceneLearner(config)
 from datasets import *
 B = 32
 shuffle = 1
-dataset = StructureGroundingDataset(config, category="chair", split = "train")
+dataset = StructureGroundingDataset(config, category="vase", split = "train")
 dataloader = DataLoader(dataset, batch_size = B, shuffle = shuffle)
 
 # [Get A Sample Data]
@@ -165,8 +165,8 @@ def visualize_pointcloud_components(pts,view_name = None, view = None):
 import matplotlib.pyplot as plt
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-path = "checkpoints/scenelearner/3dpc/KFT_3d_perception_structure_csqnet_phase0.ckpt"
-#path = "checkpoints/scenelearner/3dpc/KFT_3d_perception_structure_csqnet_phase0_vase.pth"
+path = "checkpoints/scenelearner/3dpc/VNL_3d_perception_structure_csqnet_phase1.ckpt"
+#path = "checkpoints/scenelearner/3dpc/KFT_vase_phase0.ckpt"
 
 if "ckpt" in path[-4:]:
     model = torch.load(path,map_location=device)
@@ -199,6 +199,93 @@ pc_colors = torch.ones(pc.shape[0],3) * 0.5
 input_pcs = [(coords,coords_colors),(pc,pc_colors)]
 visualize_pointcloud(input_pcs)
 plt.show()
+
+# language concepts
+def freeze_parameters(model):
+    for param in model.parameters():
+        param.requires_grad = False
+def unfreeze_parameters(model):
+    for param in model.parameters():
+        param.requires_grad = True
+
+def freeze_hierarchy(model, depth):
+    size = len(model.scene_builder)
+    for i in range(1,size+1):
+        if i <= depth:unfreeze_parameters(model.hierarhcy_maps[i-1])
+        else:freeze_parameters(model.scene_builder)
+    model.executor.effective_level = depth
+
+test_features = Variable(torch.randn(1,3,100),requires_grad = True)
+scene_depth = 3
+for phase in range(1, scene_depth + 1):
+    freeze_hierarchy(model,depth = phase)
+
+def get_prob(executor,feat,concept):
+        pdf = []
+        for predicate in executor.concept_vocab:
+            pdf.append(torch.sigmoid(executor.entailment(feat,
+                executor.get_concept_embedding(predicate) )))
+        pdf = torch.cat(pdf, dim = 0)
+        idx = executor.concept_vocab.index(concept)
+        return pdf[idx]/ pdf.sum(dim = 0)
+
+def build_label(feature, executor):
+    default_label = "x"
+    predicates = executor.concept_vocab
+    prob = 0.0
+    for predicate in predicates:
+        pred_prob = get_prob(executor, feature, predicate)
+        if pred_prob > prob:
+            prob = pred_prob
+            default_label = predicate
+            #default_label = "{}_{:.2f}".format(predicate,float(pred_prob))
+
+    default_color = [64./255,74./255,121./255,float(prob)]
+    return default_label, default_color
+
+def visualize_outputs(scores, features, connections,executor, kwargs):
+    plt.cla()
+    shapes = [score.shape[0] for score in scores]
+    nodes = [];labels = [];colors = [];layouts = []
+    # Initialize Scores
+    width = 0.6; height = 1.0
+    plt.tick_params(left = False, right = False , labelleft = False ,
+                labelbottom = False, bottom = False)
+
+    for i in range(len(scores)):
+        if len(scores[i]) == 1: xs = [0.0];
+        else: xs = torch.linspace(-1,1,len(scores[i])) * (width ** i)
+        for j in range(len(scores[i])):
+            nodes.append(sum(shapes[:i]) + j)
+            
+            if len(features[i].shape) == 3:
+                label,c = build_label(features[i][:,j], executor)
+            else:label,c = build_label(features[i][j], executor)
+            #c[0] = float(torch.linspace(0,1,len(scores))[i])
+            c[-1] = min(float(scores[i][j]),c[-1])
+            c[-1] = float(scores[i][j])
+            label = "{}_{:.2f}".format(label,c[-1])
+            labels.append(label);colors.append(c)
+            # layout the locations
+            layouts.append([xs[j],i * height])
+            plt.scatter(xs[j],i * height,color = c, linewidths=9)
+            plt.text(xs[j], i * height - 0.01, label)
+
+    for n in range(len(connections)):
+        connection = connections[n].permute(1,0)
+
+        for i in range(len(connection)):
+            for j in range(len(connection[i])):                
+                u = i + sum(shapes[:n])
+                v = j + sum(shapes[:n+1])
+       
+                plt.plot(
+                    (layouts[u][0],layouts[v][0]),
+                    (layouts[u][1],layouts[v][1]), alpha = float(connection[i][j].detach()), color = "black")
+    
+    return 
+
+# component test
 
 splits = np.load("outputs/splits.npy")[0]
 # Visualize Components

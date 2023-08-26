@@ -130,7 +130,7 @@ def load_scene(scene, k):
 # Set Level Grounding 
 EPS = 1e-5
 
-TEST = 0
+TEST = 1
 
 config.hierarchy_construct = (3,2,1)
 
@@ -180,6 +180,12 @@ test_tree.add_edge("root","pot")
 test_tree.add_edge("pot","body")
 test_tree.add_edge("body","container")
 test_tree.add_edge("body","plant")
+"""
+抱歉 之前家里出了些事情 一直没能调整好自己的状态； 导致一直没有作出什么progress。
+我在doc里记录了目前跑出来的一些结果 以及一些改进的propsal 不知道这样是否合理
+
+多谢理解🙏
+"""
 
 def gen_full_grounding(test_tree, mode = "full"):
     test_dataset = {}

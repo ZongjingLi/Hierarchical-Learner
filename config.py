@@ -22,7 +22,7 @@ parser.add_argument("--name",               default = "SceneGraphLearner")
 #parser.add_argument("--category",           default = "")
 
 parser.add_argument("--domain",             default = "structure")
-parser.add_argument("--category",           default = ["chair"])
+parser.add_argument("--category",           default = ["vase"])
 
 # setup the perception module
 parser.add_argument("--perception",         default = "csqnet")

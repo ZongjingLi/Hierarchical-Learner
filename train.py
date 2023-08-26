@@ -72,6 +72,9 @@ def load_scene(scene, k):
 
 def train_pointcloud(train_model, config, args, phase = "1"):
     B = int(args.batch_size)
+    train_model = train_model.to(config.device)
+    train_model.config = config
+    train_model.executor.config = config
     assert phase in ["0", "1", "2", "3", "4", "5",0,1,2,3,4,5],print("not a valid phase")
     query = False if args.phase in ["0",0] else True
     clip_grads = query
