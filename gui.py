@@ -228,11 +228,6 @@ def freeze_hierarchy(model, depth):
         else:freeze_parameters(model.scene_builder)
     model.executor.effective_level = depth
 
-test_features = Variable(torch.randn(1,3,100),requires_grad = True)
-scene_depth = 3
-for phase in range(1, scene_depth + 1):
-    freeze_hierarchy(model,depth = phase)
-
 def get_prob(executor,feat,concept):
         pdf = []
         for predicate in executor.concept_vocab:
@@ -320,9 +315,33 @@ if make_gif:
     make_gif(images, "outputs/recon_components.gif",duration = 0.1)
     make_gif(full_images, "outputs/full_recon_components.gif",duration = 0.1)
 
+def load_scene(scene, k): 
+    scores = scene["scores"]; features = scene["features"]; connections = scene["connections"]
+    return [score[k] for score in scores], [feature[k] for feature in features], \
+        [connection[k] for connection in connections[1:]]
+
 visualize_pointcloud_components(splits, view = 0)
 plt.show()
 
+
+test_features = Variable(torch.randn(1,3,100),requires_grad = True)
+scene_depth = 3
+for phase in range(1, scene_depth + 1):
+    freeze_hierarchy(model,depth = phase)
+input_features = test_features
+
+scene = model.build_scene(input_features)
+test_scores, test_features, test_connections = load_scene(scene,0)
+
+kwargs = {"features":test_features, "end":test_scores, "connections":test_connections}
+
+q = "filter(scene(), container)"
+q = model.executor.parse(q)
+o = model.executor(q, **kwargs)
+
+print(o["end"])
+
+"""
 parts = input("parts:")
 parts = parts.split(",")
 idx = [int(w) for w in parts]
@@ -336,3 +355,4 @@ idx = [int(w) for w in parts]
 print(idx)
 vis_partial_components(splits, idx)
 plt.show()
+"""
