@@ -102,6 +102,19 @@ def vis_pts(x, att=None, vis_fn="outputs/temp.png"):
         label_map = torch.argmax(att, dim=2)[idx].squeeze().cpu().numpy()
     vis_pts_att(pts, label_map, fn=vis_fn)
 
+def vis_partial_components(pts, idxs):
+    c = '#08455e'
+    s = 3.0
+    rang = 0.7
+    full_fig = plt.figure("full_viz", figsize = (s,s), frameon = False)
+    full_ax = full_fig.add_subplot(1,1,1,projection='3d')
+    full_ax.set_axis_off()
+    full_ax.set_zlim(-rang,rang);full_ax.set_xlim(-rang,rang);full_ax.set_ylim(-rang,rang)
+    for idx in idxs:
+        coords = pts[idx]
+        full_ax.scatter(coords[:,0],coords[:,1],coords[:,2], c = c)
+    full_ax.view_init(elev = 100 , azim = -90, roll = 0)
+
 def visualize_pointcloud_components(pts,view_name = None, view = None):
     namo_colors = [
     '#1f77b4',  # muted blue
@@ -288,19 +301,38 @@ def visualize_outputs(scores, features, connections,executor, kwargs):
 # component test
 
 splits = np.load("outputs/splits.npy")[0]
-# Visualize Components
-images = []
-full_images = []
-N_frames = 10
-for i in tqdm(range(N_frames)):
-    visualize_pointcloud_components(splits, view_name = "KFT{}".format(i), view = i * 360.0/N_frames)
-    frame = plt.imread("outputs/details/{}_pc_components.png".format("KFT{}".format(i)))
-    images.append(frame)    
-    frame = plt.imread("outputs/details/{}_pc_full_components.png".format("KFT{}".format(i)))
-    full_images.append(frame)
 
-from visualize import make_gif
+make_gif = 0
+if make_gif:
+    # Visualize Components
+    images = []
+    full_images = []
+    N_frames = 10
+    for i in tqdm(range(N_frames)):
+        visualize_pointcloud_components(splits, view_name = "KFT{}".format(i), view = i * 360.0/N_frames)
+        frame = plt.imread("outputs/details/{}_pc_components.png".format("KFT{}".format(i)))
+        images.append(frame)    
+        frame = plt.imread("outputs/details/{}_pc_full_components.png".format("KFT{}".format(i)))
+        full_images.append(frame)
 
-make_gif(images, "outputs/recon_components.gif",duration = 0.1)
-make_gif(full_images, "outputs/full_recon_components.gif",duration = 0.1)
-#plt.show()
+    from visualize import make_gif
+
+    make_gif(images, "outputs/recon_components.gif",duration = 0.1)
+    make_gif(full_images, "outputs/full_recon_components.gif",duration = 0.1)
+
+visualize_pointcloud_components(splits, view = 0)
+plt.show()
+
+parts = input("parts:")
+parts = parts.split(",")
+idx = [int(w) for w in parts]
+print(idx)
+vis_partial_components(splits, idx)
+plt.show()
+
+parts = input("parts:")
+parts = parts.split(",")
+idx = [int(w) for w in parts]
+print(idx)
+vis_partial_components(splits, idx)
+plt.show()
