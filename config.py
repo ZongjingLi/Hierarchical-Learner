@@ -29,6 +29,7 @@ parser.add_argument("--perception",         default = "csqnet")
 parser.add_argument("--perception_size",    default = 7)
 parser.add_argument("--imsize",             default = 128)
 parser.add_argument("--resolution",         default = (128,128))
+parser.add_argument("--conv_feature_dim",   default = 128)
 parser.add_argument("--hidden_dim",         default = 100)
 parser.add_argument("--latent_dim",         default = 128) # point cloud encoder
 parser.add_argument("--scaling",            default = 10.0)
