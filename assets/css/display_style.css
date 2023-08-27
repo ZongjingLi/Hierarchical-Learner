@@ -1,6 +1,6 @@
 .compare_grid {
     display: grid;
-    grid-template-columns: 3fr 2fr;
+    grid-template-columns: 2fr 3fr;
 }
 
 header {
@@ -60,4 +60,19 @@ body {
     max-height: 100%;
     display: block;
     margin: auto;
+}
+
+.input-grid {
+    display: grid;
+    grid-template-columns: 2fr 2fr;
+}
+
+.structure-grid {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+
+}
+
+.vis-tree {
+    margin-left: 17%;
 }

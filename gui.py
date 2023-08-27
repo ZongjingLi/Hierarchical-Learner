@@ -1,16 +1,8 @@
 from config import *
 from models import *
-
-model = SceneLearner(config)
 from datasets import *
-B = 32
-shuffle = 1
-dataset = StructureGroundingDataset(config, category="vase", split = "train")
-dataloader = DataLoader(dataset, batch_size = B, shuffle = shuffle)
-
-# [Get A Sample Data]
-for sample in dataloader:
-    sample, gt = sample
+import matplotlib.pyplot as plt
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 def visualize_pointcloud(input_pcs,name="pc"):
     rang = 0.7; N = len(input_pcs)
@@ -175,44 +167,6 @@ def visualize_pointcloud_components(pts,view_name = None, view = None):
         fig.savefig("outputs/details/{}_pc_components.png".format(view_name))
         full_fig.savefig("outputs/details/{}_pc_full_components.png".format(view_name))
 
-import matplotlib.pyplot as plt
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
-
-path = "checkpoints/scenelearner/3dpc/VNL_3d_perception_structure_csqnet_phase1.ckpt"
-#path = "checkpoints/scenelearner/3dpc/KFT_vase_phase0.ckpt"
-
-if "ckpt" in path[-4:]:
-    model = torch.load(path,map_location=device)
-else: model = SceneLearner(config);model.load_state_dict(torch.load(path,map_location = device))
-model.part_perception.split_components = True
-outputs = model.part_perception(sample)
-for k in outputs:print(k)
-components = outputs["components"]
-
-
-# Save Test Run Results
-recon_pc = outputs["recon_pc"][0]
-point_cloud = sample["point_cloud"][0]
-masks = outputs["masks"][0]
-np.save("outputs/recon_point_cloud.npy",np.array(recon_pc.cpu().detach()))
-
-np.save("outputs/point_cloud.npy",np.array(point_cloud.cpu().detach()))
-np.save("outputs/masks.npy",np.array(masks.cpu().detach()))
-if components is not None:
-    np.save("outputs/splits.npy",np.array(components.cpu().detach()))
-#
-
-coords = torch.tensor(np.load("outputs/recon_point_cloud.npy")).permute(1,0)
-n = coords.shape[0]
-coords_colors = torch.ones([n,3]) * 0.5
-
-pc = torch.tensor(np.load("outputs/point_cloud.npy"))
-pc_colors = torch.ones(pc.shape[0],3) * 0.5
-
-input_pcs = [(coords,coords_colors),(pc,pc_colors)]
-visualize_pointcloud(input_pcs)
-plt.show()
-
 # language concepts
 def freeze_parameters(model):
     for param in model.parameters():
@@ -290,13 +244,13 @@ def visualize_outputs(scores, features, connections,executor, kwargs):
                 plt.plot(
                     (layouts[u][0],layouts[v][0]),
                     (layouts[u][1],layouts[v][1]), alpha = float(connection[i][j].detach()), color = "black")
-    
-    return 
 
-# component test
+def load_scene(scene, k): 
+    scores = scene["scores"]; features = scene["features"]; connections = scene["connections"]
+    return [score[k] for score in scores], [feature[k] for feature in features], \
+        [connection[k] for connection in connections[1:]]
 
-splits = np.load("outputs/splits.npy")[0]
-
+"""
 make_gif = 0
 if make_gif:
     # Visualize Components
@@ -314,42 +268,140 @@ if make_gif:
 
     make_gif(images, "outputs/recon_components.gif",duration = 0.1)
     make_gif(full_images, "outputs/full_recon_components.gif",duration = 0.1)
+"""
 
-def load_scene(scene, k): 
-    scores = scene["scores"]; features = scene["features"]; connections = scene["connections"]
-    return [score[k] for score in scores], [feature[k] for feature in features], \
-        [connection[k] for connection in connections[1:]]
+"""
+Start the Main Part of Code and Load the Scene
+"""
 
-visualize_pointcloud_components(splits, view = 0)
-plt.show()
+def visualize_tree(scores, connections, scale = 1.2):
+    fig = plt.figure("tree-visualize",frameon = False)
+    plt.tick_params(left = False, right = False , labelleft = False ,
+                labelbottom = False, bottom = False)
+    plt.axis("off")
+    x_locs = []; y_locs = []
+    scores.insert(0, torch.ones(10))
+    for i,score in enumerate(reversed(scores)):
+        num_nodes = len(score)
+        # calculate scores each node
+        score = (score.sigmoid() + 0.5).int()
+        score = torch.clamp(score,0.1,1)
+
+        y_positions = [-scale*(i+1) / 2.0] * num_nodes
+        x_positions = np.linspace(-scale**(i+1), scale**(i+1), num_nodes)
+        if num_nodes == 1: x_positions = [0.0]
+        x_locs.append(x_positions); y_locs.append(y_positions)
+        
+        plt.scatter(x_positions, y_positions, alpha = score, color = '#1f77b4', linewidths=2.0)
+    for k,connection in enumerate(reversed(connections)):
+        connection = connection
+        
+        lower_node_num = len(x_locs[k])
+        upper_node_num = len(x_locs[k+1])
+        
+        for i in range(lower_node_num):
+            for j in range(upper_node_num):
+                plt.plot( [x_locs[k][i],x_locs[k+1][j]], [y_locs[k][i], y_locs[k+1][j]], color = "black" ,alpha = float(connection[i][j]))
+    plt.tick_params(left = False, right = False , labelleft = False ,
+                labelbottom = False, bottom = False)
+
+# component test
+
+# [Create a Model]
+model = SceneLearner(config)
+
+# [Sample Data]
+B = 32
+shuffle = 1
+dataset = StructureGroundingDataset(config, category="vase", split = "train")
+dataloader = DataLoader(dataset, batch_size = B, shuffle = shuffle)
+# [Get A Sample Data]
+for sample in dataloader:
+    sample, gt = sample
 
 
-test_features = Variable(torch.randn(1,3,100),requires_grad = True)
-scene_depth = 3
-for phase in range(1, scene_depth + 1):
-    freeze_hierarchy(model,depth = phase)
-input_features = test_features
+# [Load a Concept Learner Model]
+path = "checkpoints/scenelearner/3dpc/VNL_3d_perception_structure_csqnet_phase1.ckpt"
+#path = "checkpoints/scenelearner/3dpc/KFT_vase_phase0.ckpt" 
+if "ckpt" in path[-4:]:
+    model = torch.load(path,map_location=device)
+else: model = SceneLearner(config);model.load_state_dict(torch.load(path,map_location = device))
+model.part_perception.split_components = True
+outputs = model.part_perception(sample)
 
-scene = model.build_scene(input_features)
+components = outputs["components"] 
+
+# [Run the Language Model Part ]
+features = outputs["features"]
+features = model.feature2concept(features)
+
+scene = model.build_scene(features)
 test_scores, test_features, test_connections = load_scene(scene,0)
 
 kwargs = {"features":test_features, "end":test_scores, "connections":test_connections}
 
+# [Save Test Run Results]
+recon_pc = outputs["recon_pc"][0]
+point_cloud = sample["point_cloud"][0]
+masks = outputs["masks"][0]
+np.save("outputs/recon_point_cloud.npy",np.array(recon_pc.cpu().detach()))
+
+np.save("outputs/point_cloud.npy",np.array(point_cloud.cpu().detach()))
+np.save("outputs/masks.npy",np.array(masks.cpu().detach()))
+splits = np.load("outputs/splits.npy")[0]
+if components is not None:
+    np.save("outputs/splits.npy",np.array(components.cpu().detach()))
+
+
+# [Visualize Point cloud Reconstruction and Inputs]
+coords = torch.tensor(np.load("outputs/recon_point_cloud.npy")).permute(1,0)
+n = coords.shape[0]
+coords_colors = torch.ones([n,3]) * 0.5
+
+pc = torch.tensor(np.load("outputs/point_cloud.npy"))
+pc_colors = torch.ones(pc.shape[0],3) * 0.5
+
+input_pcs = [(coords,coords_colors),(pc,pc_colors)]
+visualize_pointcloud(input_pcs)
+#plt.show()
+
+# [Visualize Predicate Segmentation]
 q = "filter(scene(), container)"
+q = "scene()"
 q = model.executor.parse(q)
 o = model.executor(q, **kwargs)
+for end in  reversed(o["end"]):print((torch.sigmoid(end) + 0.5).int())
+print((scene["connections"][0][0]+0.5 ).int())
 
-print(o["end"])
-for key in o:print(key)
+visualize_pointcloud_components(splits, view = 0)
+#plt.show()
 
-"""
-parts = input("parts:")
-parts = parts.split(",")
-idx = [int(w) for w in parts]
+def prob_flow(scores, connections, b = 0):
+    output_score = scores[-1]
+    for score,connection in zip(reversed(scores[:-1]), reversed(connections)):
+        spread_scores = torch.matmul(output_score.sigmoid(),connection[0]).log()
+        output_score = torch.max(spread_scores, score)
+    return output_score
+        
+
+parts = prob_flow(o["end"],scene["connections"])
+view_connections = [s[0] for s in scene["connections"]]
+visualize_tree(o["end"],view_connections)
+plt.savefig("outputs/vis_tree.png")
+#plt.show()
+#parts = (scene["connections"][0][0]+0.5 )
+print((torch.sigmoid(parts)+0.5).int())
+print(torch.sigmoid(parts))
+
+parts = (torch.sigmoid(parts) + 0.5).int()
+idx = []
+for i in range(len(parts)):
+    if int(parts[i]) == 1: idx.append(i)
 print(idx)
 vis_partial_components(splits, idx)
-plt.show()
+#plt.show()
 
+"""
 parts = input("parts:")
 parts = parts.split(",")
 idx = [int(w) for w in parts]
