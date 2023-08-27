@@ -340,6 +340,7 @@ q = model.executor.parse(q)
 o = model.executor(q, **kwargs)
 
 print(o["end"])
+for key in o:print(key)
 
 """
 parts = input("parts:")
