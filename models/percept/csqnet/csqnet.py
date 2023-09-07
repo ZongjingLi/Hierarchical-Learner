@@ -102,6 +102,7 @@ class CSQNet(nn.Module):
 
         chamfer_loss = 0.
         splits = None
+  
         if self.split_components:
             splits = [t.unsqueeze(1) for t in y]
             splits = torch.cat(splits, dim = 1).permute(0,1,3,2)
@@ -110,8 +111,9 @@ class CSQNet(nn.Module):
             #    pc_comp = pc / (1e-4 + wts)
             #    chamfer_loss += self.chamfer_loss(pc_comp, comp_pts) # Loss
             y = torch.cat(y, dim = 2)
-            chamfer_loss += self.chamfer_loss(pc,y)
-
+            min_size = min(y.shape[-1], pc.permute(0,2,1).shape[-1])
+            #print(pc.shape, y.shape)
+            chamfer_loss += self.chamfer_loss(pc[:,:,:min_size],y[:,:,:min_size])
 
         else: chamfer_loss += self.chamfer_loss(pc.permute(0,2,1),y)
 

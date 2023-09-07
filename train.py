@@ -90,6 +90,8 @@ def train_pointcloud(train_model, config, args, phase = "1"):
             train_dataset = StructureDataset(config, category = "vase")
         if args.phase in ["1","2","3","4"]:
             train_dataset = StructureGroundingDataset(config, category = args.category, split = "train", phase = "1")
+    if args.dataset == "Multistruct":
+        train_dataset =multistructnet4096("train", "animal", False)
     
     #train_dataset = StructureGroundingDataset(config, category="vase", split = "train")
     dataloader = DataLoader(train_dataset, batch_size = int(args.batch_size), shuffle = args.shuffle)
@@ -371,7 +373,7 @@ def build_perception(size,length,device):
 print("using perception: {} knowledge:{} dataset:{}".format(args.perception,config.concept_type,args.dataset))
 
 
-if args.dataset in ["Objects3d","StructureNet"]:
+if args.dataset in ["Objects3d","StructureNet","Multistruct"]:
     print("start the 3d point cloud model training.")
     train_pointcloud(model, config, args, phase = args.phase)
 
