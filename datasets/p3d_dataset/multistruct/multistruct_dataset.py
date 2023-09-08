@@ -46,7 +46,7 @@ class multistructnet4096(data.Dataset):
 
 if __name__ == "__main__":
 
-    dataset = mutlstructnet4096("train","animal",False)
+    dataset = multistructnet4096("train","animal",False)
     print(len(dataset))
     sample = dataset[1]
     cur_points = sample["point_cloud"]
