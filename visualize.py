@@ -5,8 +5,8 @@ model = SceneLearner(config)
 
 from datasets import *
 B = 1
-#dataset = StructureGroundingDataset(config, category="chair", split = "train")
-dataset = multistructnet4096("train","animal", False)
+dataset = StructureGroundingDataset(config, category="vase", split = "train")
+#dataset = multistructnet4096("train","animal", False)
 print(len(dataset))
 dataloader = DataLoader(dataset, batch_size = B, shuffle = True)
 
@@ -105,7 +105,7 @@ def vis_pts(x, att=None, vis_fn="outputs/temp.png"):
 
 import matplotlib.pyplot as plt
 
-model = torch.load("checkpoints/scenelearner/3dpc/CSQ_Animal_0.ckpt", map_location = "cpu")
+model = torch.load("checkpoints/scenelearner/3dpc/CSQ_Vase_0.ckpt", map_location = "cpu")
 model.part_perception.split_components = True
 outputs = model.part_perception(sample)
 for k in outputs:print(k)
@@ -164,11 +164,14 @@ def visualize_pointcloud_components(pts):
     fig.savefig("outputs/pc_components.png")
     full_fig.savefig("outputs/pc_full_components.png")
 
-coords = torch.tensor(np.load("outputs/recon_point_cloud.npy")).permute(1,0)
 coords = outputs["recon_pc"].detach()
 n = coords.shape[0]
 coords_colors = torch.ones([n,3]) * 0.5
-input_pcs = [(coords,coords_colors)]
+
+in_coords = sample["point_cloud"][0]
+n = in_coords.shape[0]
+in_colors = torch.ones([n,3]) * 0.5
+input_pcs = [(coords,coords_colors),[in_coords, in_colors]]
 
 visualize_pointcloud(input_pcs)
 plt.show()
