@@ -35,7 +35,7 @@ parser.add_argument("--latent_dim",         default = 128) # point cloud encoder
 parser.add_argument("--scaling",            default = 10.0)
 
 # acne network
-parser.add_argument("--num_pts",            default = 4096)
+parser.add_argument("--num_pts",            default = 1020)
 parser.add_argument("--indim",              default = 3)
 parser.add_argument("--grid_dim",           default = 64)
 parser.add_argument("--decoder_grid",       default = "learnable")
