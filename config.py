@@ -42,12 +42,12 @@ parser.add_argument("--decoder_grid",       default = "learnable")
 parser.add_argument("--decoder_bottleneck_size",    default = 1280) # 1280
 parser.add_argument("--acne_net_depth",     default = 3)
 parser.add_argument("--acne_num_g",         default = 10)
-parser.add_argument("--acne_dim",           default = 400)
+parser.add_argument("--acne_dim",           default = 128)
 parser.add_argument("--acne_bn_type",       default = "bn")
 parser.add_argument("--cn_type", type=str,
                       default="acn_b",
                       help="Encoder context normalization type")
-parser.add_argument("--node_feat_dim",      default = 100)
+parser.add_argument("--node_feat_dim",      default = 102)
 parser.add_argument("--pose_code",          default = "nl-noR_T")
 
 # concept learner structure
