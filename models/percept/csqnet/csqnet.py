@@ -77,7 +77,7 @@ class CSQNet(nn.Module):
         if config.concept_projection:
             self.feature2concept = nn.Linear(config.latent_dim, concept_dim//2) # Deprecated
         self.scaling = 1.0
-        self.split_components = True
+        self.split_components = False
     
 
 
@@ -99,12 +99,12 @@ class CSQNet(nn.Module):
         gc = torch.cat([kps[..., None], gc], dim=1)
 
         y = self.decoder(gc.transpose(2, 1).squeeze(-1), return_splits = self.split_components)
-
+        #print(pc.shape, y.shape)
         chamfer_loss = 0.
         splits = None
 
 
-        if 0 and self.split_components:
+        if self.split_components:
             splits = [t.unsqueeze(1) for t in y]
             splits = torch.cat(splits, dim = 1).permute(0,1,3,2)
             #for i,comp_pts in enumerate(y):
@@ -114,12 +114,12 @@ class CSQNet(nn.Module):
             y = torch.cat(y, dim = 2)
             min_size = min(y.shape[-1], pc.permute(0,2,1).shape[-1])
             #print(pc.shape, y.shape)
-            chamfer_loss += self.chamfer_loss(pc[:,:,:min_size],y[:,:,:min_size])
+            #chamfer_loss += self.chamfer_loss(pc[:,:,:min_size],y[:,:,:min_size])
 
         else: 
-            gc = torch.cat([kps[..., None], gc], dim=1)
-            y = self.decoder(gc.transpose(2, 1).squeeze(-1))
-            self.chamfer_loss(pc, y)
+            #gc = torch.cat([kps[..., None], gc], dim=1)
+            #y = self.decoder(gc.transpose(2, 1).squeeze(-1))
+            #self.chamfer_loss(pc, y)
             chamfer_loss += self.chamfer_loss(pc.permute(0,2,1),y)
 
         attention = attention.squeeze(1)
