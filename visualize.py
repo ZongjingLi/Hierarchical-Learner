@@ -5,8 +5,8 @@ model = SceneLearner(config)
 
 from datasets import *
 B = 1
-dataset = StructureGroundingDataset(config, category="vase", split = "train")
-#dataset = multistructnet4096("train","airplane", False)
+#dataset = StructureGroundingDataset(config, category="vase", split = "train")
+dataset = multistructnet4096("train","airplane", False)
 print(len(dataset))
 dataloader = DataLoader(dataset, batch_size = B, shuffle = True)
 
@@ -105,9 +105,9 @@ def vis_pts(x, att=None, vis_fn="outputs/temp.png"):
 
 import matplotlib.pyplot as plt
 
-#model = torch.load("checkpoints/scenelearner/3dpc/CSQ_Airplane_0.ckpt", map_location = "cpu")
+model = torch.load("checkpoints/scenelearner/3dpc/CSQ_Airplane_0.ckpt", map_location = "cpu")
 #model = torch.load("checkpoints/temp.ckpt", map_location = "cpu")
-model = torch.load("checkpoints/scenelearner/3dpc/KFT_3d_perception_structure_csqnet_phase0.ckpt", map_location = "cpu")
+#model = torch.load("checkpoints/scenelearner/3dpc/VNL_3d_perception_structure_csqnet_phase0.ckpt", map_location = "cpu")
 model.part_perception.split_components = True
 outputs = model.part_perception(sample)
 for k in outputs:print(k)
