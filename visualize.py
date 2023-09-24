@@ -5,8 +5,8 @@ model = SceneLearner(config)
 
 from datasets import *
 B = 1
-#dataset = StructureGroundingDataset(config, category="vase", split = "train")
-dataset = multistructnet4096("train","airplane", False)
+dataset = StructureGroundingDataset(config, category="vase", split = "train")
+#dataset = multistructnet4096("train","airplane", False)
 print(len(dataset))
 dataloader = DataLoader(dataset, batch_size = B, shuffle = True)
 
@@ -18,6 +18,7 @@ def visualize_pointcloud(input_pcs,name="pc"):
     rang = 0.618; N = len(input_pcs)
     num_rows = 3
     fig = plt.figure("visualize",figsize=plt.figaspect(1/N), frameon = True)
+    plt.rcParams["savefig.bbox"] = "tight"
     for i in range(N):
         ax = fig.add_subplot(1, N , 1 + i, projection='3d')
         ax.set_zlim(-rang,rang);ax.set_xlim(-rang,rang);ax.set_ylim(-rang,rang)
@@ -107,7 +108,7 @@ import matplotlib.pyplot as plt
 
 model = torch.load("checkpoints/scenelearner/3dpc/CSQ_Airplane_0.ckpt", map_location = "cpu")
 #model = torch.load("checkpoints/temp.ckpt", map_location = "cpu")
-#model = torch.load("checkpoints/scenelearner/3dpc/VNL_3d_perception_structure_csqnet_phase0.ckpt", map_location = "cpu")
+model = torch.load("checkpoints/scenelearner/3dpc/VNL_3d_perception_structure_csqnet_phase0.ckpt", map_location = "cpu")
 model.part_perception.split_components = True
 outputs = model.part_perception(sample)
 for k in outputs:print(k)

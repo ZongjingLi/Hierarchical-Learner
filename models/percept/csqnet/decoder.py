@@ -5,6 +5,7 @@ import numpy as np
 import itertools
 
 
+
 # Modified from: https://github.com/XuyangBai/PPF-FoldNet/blob/master/loss/chamfer_loss.py 
 class ChamferLoss(nn.Module):
 
@@ -12,7 +13,7 @@ class ChamferLoss(nn.Module):
         super(ChamferLoss, self).__init__()
         self.use_cuda = torch.cuda.is_available()
 
-    def forward(self, gts, preds, atten=None, side="both", reduce=True, wts = None):
+    def forward(self, gts, preds, atten=None, side="both", reduce=True):
         # atten: BMN?
         P = self.batch_pairwise_dist(gts, preds)
         if atten is not None:
@@ -144,7 +145,6 @@ class KpDecoder(nn.Module):
 
         for i in range(self.num_kp):
             y_ = y[:, i].transpose(2, 1)
-
             out_ = self.decoder[i](y_) # B*3*num_pts_per_grid
             if self.config.pose_code in ["nl-noR_T"]:
                 out_ = out_ + t[:, i][..., None]
@@ -172,7 +172,6 @@ class MlpPointsFC(nn.Module):
     def forward(self, x):
         # x: BxC
         # pts; Bx3xM
-        pts = self.layer(x)
-        pts = pts.reshape(-1, self.out_dim, self.num_points)
+        pts = self.layer(x).reshape(-1, self.out_dim, self.num_points)
         return pts
 # decoder_utils.py ends here

@@ -82,8 +82,8 @@ class CSQNet(nn.Module):
 
 
     def forward(self, inputs):
-        pc = inputs['point_cloud'].permute(0,2,1) * self.scaling
-        enc_in = inputs['point_cloud'] * self.scaling 
+        pc = inputs['point_cloud'].permute(0,2,1) 
+        enc_in = inputs['point_cloud'] 
 
         enc_in = enc_in[...,None].permute(0,2,1,3)
 
@@ -96,7 +96,7 @@ class CSQNet(nn.Module):
         equi_loss = equillibrium_loss(attention)
         # reconstruction from canonical capsules 
 
-        gc = torch.cat([kps[..., None], gc], dim=1)
+        gc = torch.cat([pose_locals, gc], dim=1)
 
         y = self.decoder(gc.transpose(2, 1).squeeze(-1), return_splits = self.split_components)
         #print(pc.shape, y.shape)
