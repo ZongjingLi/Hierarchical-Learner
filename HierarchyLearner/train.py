@@ -113,15 +113,19 @@ def train(train_model, config, args, phase = "1"):
             
             # [Overall Working Loss]
             working_loss = percept_loss + query_loss
+            epoch_loss += working_loss.cpu().detach().numpy()
             writer.add_scalar("working_loss",working_loss.cpu().detach().numpy(), itrs)
 
+            # [Optimization Loss]
             optimizer.zero_grad()
             working_loss.backward()
             optimizer.step()
 
             if itrs % args.checkpoint_itrs == 0:
-                torch.save()
+                torch.save(train_model, "checkpoints/{}_{}_{}.ckpt".format(args.name,args.dataset,args.phase))
 
+            sys.stdout.write ("\rEpoch: {}, Itrs: {} Loss: {} Percept:{} Language:{}, Time: {}"\
+                .format(epoch + 1, itrs, working_loss,percept_loss,query_loss,datetime.timedelta(seconds=time.time() - start)))
             itrs += 1
 
         writer.add_scalar("epoch_loss", epoch_loss, epoch)
