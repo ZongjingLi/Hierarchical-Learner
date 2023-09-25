@@ -6,6 +6,7 @@ weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":
 
 argparser = argparse.ArgumentParser()
 # [general config of the training]
+argparser.add_argument("--cmd",                     default = "train")
 argparser.add_argument("--phase",                   default = "0")
 argparser.add_argument("--device",                  default = config.device)
 argparser.add_argument("--name",                    default = "KFT")
@@ -19,7 +20,7 @@ argparser.add_argument("--freeze_perception",       default = False)
 argparser.add_argument("--concept_type",            default = False)
 
 # [perception and language grounding training]
-argparser.add_argument("--perception",              default = "psgnet")
+argparser.add_argument("--perception",              default = "csqnet")
 argparser.add_argument("--training_mode",           default = "joint")
 argparser.add_argument("--alpha",                   default = 1.00)
 argparser.add_argument("--beta",                    default = 1.0)
@@ -68,3 +69,8 @@ if args.pretrain_perception:
 print("using perception: {} knowledge:{} dataset:{}".format(args.perception,config.concept_type,args.dataset))
 
 
+if args.cmd == "train":
+    print("start the traininig process")
+
+if args.cmd == "test":
+    print("start the testing process")
