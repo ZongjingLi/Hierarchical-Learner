@@ -39,7 +39,7 @@ def load_scene(scene, k):
     return [score[k] for score in scores], [feature[k] for feature in features], \
         [connection[k] for connection in connections[1:]]
 
-def train_pointcloud(train_model, config, args, phase = "1"):
+def train(train_model, config, args, phase = "1"):
     B = int(args.batch_size)
     train_model = train_model.to(config.device)
     train_model.config = config
@@ -47,7 +47,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
     assert phase in ["0", "1", "2", "3", "4", "5",0,1,2,3,4,5],print("not a valid phase")
     query = False if args.phase in ["0",0] else True
     clip_grads = query
-    print("\nstart the experiment: {} query:[{}]".format(args.name,query))
+    print("start the experiment: {} query:[{}]".format(args.name,query))
     print("experiment config: \nepoch: {} \nbatch: {} samples \nlr: {}\n".format(args.epoch,args.batch_size,args.lr))
     if args.phase in ["1",1]: args.loss_weights["equillibrium"] = 0.01
     #[setup the training and validation dataset]
@@ -88,7 +88,7 @@ def train_pointcloud(train_model, config, args, phase = "1"):
     # [start the training process recording]
     itrs = 0
     start = time.time()
-    logging_root = "./logs"
+    logging_root = "./tf-logs"
     ckpt_dir     = os.path.join(logging_root, 'checkpoints')
     events_dir   = os.path.join(logging_root, 'events')
     if not os.path.exists(ckpt_dir): os.makedirs(ckpt_dir)
@@ -96,7 +96,34 @@ def train_pointcloud(train_model, config, args, phase = "1"):
     writer = SummaryWriter(events_dir)
     max_gradient = 1000.
     for epoch in range(args.epoch):
-        pass
+        epoch_loss =  0.0
+        for sample in dataloader:
+            sample, _ = sample
+            percept_outputs = train_model.perception(sample)
+
+            # [Percept Loss]
+            percept_loss = 0.0
+            losses = percept_outputs["losses"]
+            for item in losses:
+                percept_loss += losses[item]
+                writer.add_scalar(item, losses[item].cpu().detach().numpy(), itrs)
+
+            # [Query Loss]
+            query_loss = 0.0
+            
+            # [Overall Working Loss]
+            working_loss = percept_loss + query_loss
+            writer.add_scalar("working_loss",working_loss.cpu().detach().numpy(), itrs)
+
+            optimizer.zero_grad()
+            working_loss.backward()
+            optimizer.step()
+
+            if itrs % args.checkpoint_itrs == 0:
+                torch.save()
+
+            itrs += 1
+
         writer.add_scalar("epoch_loss", epoch_loss, epoch)
     print("\n\nExperiment {} : Training Completed.".format(args.name))
 

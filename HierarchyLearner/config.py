@@ -6,7 +6,8 @@ translator = {"scene":Scene,"exist":Exist,"filter":Filter,"union":Union,"unique"
 
 LOCAL = True
 
-root_path = "/Users/melkor/Documents/GitHub/HierarchyLearner" if LOCAL else "HierarchyLearner"
+root_path = "/Users/melkor/Documents/GitHub/Hierarchical-Learner/HierarchyLearner"\
+     if LOCAL else "Hierarcical-Learner/HierarchyLearner"
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -21,6 +22,7 @@ parser.add_argument("--domain",             default = "structure")
 parser.add_argument("--category",           default = ["vase"])
 
 # acne network
+parser.add_argument("--latent_dim",         default = 128)
 parser.add_argument("--num_pts",            default = 1024)
 parser.add_argument("--indim",              default = 3)
 parser.add_argument("--grid_dim",           default = 256)
