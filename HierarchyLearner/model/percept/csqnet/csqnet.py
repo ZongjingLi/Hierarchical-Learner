@@ -130,8 +130,8 @@ class CSQNet(nn.Module):
 
         # [Construct the Hierarchical Representation]
 
-
-        losses = {"chamfer":chamfer_loss,"localization":loc_loss,"equillibrium_loss":equi_loss}
+        #"localization":loc_loss,"equillibrium_loss":equi_loss
+        losses = {"chamfer":chamfer_loss,}
         outputs = {"losses":losses,"recon_pc":y,"masks":attention,"abstract_scene":scene_construct,\
             "features":gc.permute(0,2,1,3).squeeze(-1),"positions":pose_locals.permute(0,2,1,3).squeeze(-1),
             "components":splits}
