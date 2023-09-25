@@ -2,10 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils import Singleton
 from .measure import Measure
 
-class Entailment(nn.Module, metaclass = Singleton):
+class Entailment(nn.Module):
     rep = "box"
 
     def __init__(self,config):
@@ -15,7 +14,7 @@ class Entailment(nn.Module, metaclass = Singleton):
     def forward(self, premise, consequence):
         return self.measure.entailment(premise, consequence)
     
-class PlaneEntailment(nn.Module, metaclass = Singleton):
+class PlaneEntailment(nn.Module):
     rep = "plane"
 
     def __init__(self, config):
@@ -26,7 +25,7 @@ class PlaneEntailment(nn.Module, metaclass = Singleton):
         logit_pr = (premise * consequence - self.margin).mean(-1).clamp(-1, 1) * 8.
         return logit_pr
 
-class ConeEntailment(nn.Module, metaclass = Singleton):
+class ConeEntailment(nn.Module):
     rep = "cone"
 
     def __init__(self, config):

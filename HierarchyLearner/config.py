@@ -6,7 +6,7 @@ translator = {"scene":Scene,"exist":Exist,"filter":Filter,"union":Union,"unique"
 
 LOCAL = True
 
-root_path = "/Users/melkor/Documents/GitHub/HierarchyLearner" if LOCAL else ""
+root_path = "/Users/melkor/Documents/GitHub/HierarchyLearner" if LOCAL else "HierarchyLearner"
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -16,9 +16,6 @@ parser.add_argument("--root",               default = root_path)
 parser.add_argument("--dataset_root",       default = "/Users/melkor/Documents/datasets")
 parser.add_argument("--device",             default = device)
 parser.add_argument("--name",               default = "HierarchyLearner")
-
-#parser.add_argument("--domain",             default = "ptr")
-#parser.add_argument("--category",           default = "")
 
 parser.add_argument("--domain",             default = "structure")
 parser.add_argument("--category",           default = ["vase"])
@@ -38,5 +35,24 @@ parser.add_argument("--cn_type", type=str,
                       help="Encoder context normalization type")
 parser.add_argument("--node_feat_dim",      default = 102)
 parser.add_argument("--pose_code",          default = "nl-noR_T")
+
+parser.add_argument("--object_num",         default = 11)
+parser.add_argument("--part_num",           default = 3)
+parser.add_argument("--hierarchy_latent",   default = 128)
+parser.add_argument("--hierarchy_construct",default = [4,3,1])
+
+# setup the concept learner 
+parser.add_argument("--concept_projection", default = True)
+parser.add_argument("--concept_type",       default = "cone")
+parser.add_argument("--concept_dim",        default = 100)
+parser.add_argument("--object_dim",         default = 100)
+parser.add_argument("--temperature",        default = 32. * 4)
+
+# box concept methods
+parser.add_argument("--method",             default = "uniform")
+parser.add_argument("--offset",             default = [-.25, .25])
+parser.add_argument("--center",             default =[.0, .0])
+parser.add_argument("--entries",            default = 32 * 3)
+parser.add_argument("--translator",         default = translator)
 
 config = parser.parse_args(args = [])

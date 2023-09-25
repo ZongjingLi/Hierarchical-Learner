@@ -4,10 +4,10 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from models.nn import build_entailment, build_box_registry
-from utils import freeze
-from utils.misc import *
-from utils import *
+from model.nn import build_entailment, build_box_registry
+from Karanir.utils import freeze
+from Karanir.utils.misc import *
+from Karanir.utils import *
 
 class UnknownArgument(Exception):
     def __init__(self):super()

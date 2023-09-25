@@ -51,45 +51,20 @@ args.lr = float(args.lr)
 
 if args.checkpoint_dir:
     #model = torch.load(args.checkpoint_dir, map_location = config.device)
-    model = SceneLearner(config)
+    model = Halearner(config)
     if "ckpt" in args.checkpoint_dir[-4:]:
         model = torch.load(args.checkpoint_dir, map_location = args.device)
     else: model.load_state_dict(torch.load(args.checkpoint_dir, map_location=args.device))
 else:
     print("No checkpoint to load and creating a new model instance")
-    model = SceneLearner(config)
+    model = Halearner(config)
 model = model.to(args.device)
 
 
 if args.pretrain_perception:
     model.load_state_dict(torch.load(args.pretrain_perception, map_location = config.device))
 
-def build_perception(size,length,device):
-    edges = [[],[]]
-    for i in range(size):
-        for j in range(size):
-            # go for all the points on the grid
-            coord = [i,j];loc = i * size + j
-            
-            for r in range(1):
-                random_long_range = torch.randint(128, (1,2) )[0]
-                edges[0].append(random_long_range[0] // size)
-                edges[1].append(random_long_range[1] % size)
-            for dx in range(-length,length+1):
-                for dy in range(-length,length+1):
-                    if i+dx < size and i+dx>=0 and j+dy<size and j+dy>=0:
-                        if 1 and (i+dx) * size + (j + dy) != loc:
-                            edges[0].append(loc)
-                            edges[1].append( (i+dx) * size + (j + dy))
-    return torch.tensor(edges).to(device)
 
 print("using perception: {} knowledge:{} dataset:{}".format(args.perception,config.concept_type,args.dataset))
 
 
-if args.dataset in ["Objects3d","StructureNet","Multistruct"]:
-    print("start the 3d point cloud model training.")
-    train_pointcloud(model, config, args, phase = args.phase)
-
-if args.dataset in ["Sprites","Acherus","Toys","PTR"]:
-    print("start the image domain training session.")
-    train_image(model, config, args)
