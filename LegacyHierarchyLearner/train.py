@@ -12,13 +12,16 @@ import sys
 from datasets import *
 
 from config import *
-from model import *
+from models import *
 from visualize.answer_distribution import *
 from visualize.visualize_pointcloud import *
 
 from torch.utils.tensorboard import SummaryWriter
 import torchvision
 from skimage import color
+
+from legacy import *
+
 
 def freeze_parameters(model):
     for param in model.parameters():
@@ -286,6 +289,97 @@ def train_pointcloud(train_model, config, args, phase = "1"):
         writer.add_scalar("epoch_loss", epoch_loss, epoch)
     print("\n\nExperiment {} : Training Completed.".format(args.name))
 
+weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":1.0,"chamfer":100.0,"equillibrium_loss":1.0}
+
+argparser = argparse.ArgumentParser()
+# [general config of the training]
+argparser.add_argument("--phase",                   default = "0")
+argparser.add_argument("--device",                  default = config.device)
+argparser.add_argument("--name",                    default = "KFT")
+argparser.add_argument("--epoch",                   default = 400 * 3)
+argparser.add_argument("--optimizer",               default = "Adam")
+argparser.add_argument("--lr",                      default = 1e-3)
+argparser.add_argument("--batch_size",              default = 1)
+argparser.add_argument("--dataset",                 default = "toy")
+argparser.add_argument("--category",                default = ["vase"])
+argparser.add_argument("--freeze_perception",       default = False)
+argparser.add_argument("--concept_type",            default = False)
+
+# [perception and language grounding training]
+argparser.add_argument("--perception",              default = "psgnet")
+argparser.add_argument("--training_mode",           default = "joint")
+argparser.add_argument("--alpha",                   default = 1.00)
+argparser.add_argument("--beta",                    default = 1.0)
+argparser.add_argument("--loss_weights",            default = weights)
+
+# [additional training details]
+argparser.add_argument("--warmup",                  default = True)
+argparser.add_argument("--warmup_steps",            default = 300)
+argparser.add_argument("--decay",                   default = False)
+argparser.add_argument("--decay_steps",             default = 20000)
+argparser.add_argument("--decay_rate",              default = 0.99)
+argparser.add_argument("--shuffle",                 default = True)
+
+# [curriculum training details]
+argparser.add_argument("--effective_level",         default = 1)
+
+# [checkpoint location and savings]
+argparser.add_argument("--checkpoint_dir",          default = False)
+argparser.add_argument("--checkpoint_itrs",         default = 10,       type=int)
+argparser.add_argument("--pretrain_perception",     default = False)
+
+args = argparser.parse_args()
+
+config.perception = args.perception
+if args.concept_type: config.concept_type = args.concept_type
+args.freeze_perception = bool(args.freeze_perception)
+args.lr = float(args.lr)
+
+
+if args.checkpoint_dir:
+    #model = torch.load(args.checkpoint_dir, map_location = config.device)
+    model = SceneLearner(config)
+    if "ckpt" in args.checkpoint_dir[-4:]:
+        model = torch.load(args.checkpoint_dir, map_location = args.device)
+    else: model.load_state_dict(torch.load(args.checkpoint_dir, map_location=args.device))
+else:
+    print("No checkpoint to load and creating a new model instance")
+    model = SceneLearner(config)
+model = model.to(args.device)
+
+
+if args.pretrain_perception:
+    model.load_state_dict(torch.load(args.pretrain_perception, map_location = config.device))
+
+def build_perception(size,length,device):
+    edges = [[],[]]
+    for i in range(size):
+        for j in range(size):
+            # go for all the points on the grid
+            coord = [i,j];loc = i * size + j
+            
+            for r in range(1):
+                random_long_range = torch.randint(128, (1,2) )[0]
+                edges[0].append(random_long_range[0] // size)
+                edges[1].append(random_long_range[1] % size)
+            for dx in range(-length,length+1):
+                for dy in range(-length,length+1):
+                    if i+dx < size and i+dx>=0 and j+dy<size and j+dy>=0:
+                        if 1 and (i+dx) * size + (j + dy) != loc:
+                            edges[0].append(loc)
+                            edges[1].append( (i+dx) * size + (j + dy))
+    return torch.tensor(edges).to(device)
+
+print("using perception: {} knowledge:{} dataset:{}".format(args.perception,config.concept_type,args.dataset))
+
+
+if args.dataset in ["Objects3d","StructureNet","Multistruct"]:
+    print("start the 3d point cloud model training.")
+    train_pointcloud(model, config, args, phase = args.phase)
+
+if args.dataset in ["Sprites","Acherus","Toys","PTR"]:
+    print("start the image domain training session.")
+    train_image(model, config, args)
 
 
 
