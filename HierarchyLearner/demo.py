@@ -16,7 +16,7 @@ argparser.add_argument("--epoch",                   default = 400 * 3)
 argparser.add_argument("--optimizer",               default = "Adam")
 argparser.add_argument("--lr",                      default = 1e-3)
 argparser.add_argument("--batch_size",              default = 1)
-argparser.add_argument("--dataset",                 default = "toy")
+argparser.add_argument("--dataset",                 default = "StructureNet")
 argparser.add_argument("--category",                default = ["vase"])
 argparser.add_argument("--freeze_perception",       default = False)
 argparser.add_argument("--concept_type",            default = False)
@@ -45,6 +45,9 @@ argparser.add_argument("--checkpoint_itrs",         default = 10,       type=int
 argparser.add_argument("--pretrain_perception",     default = False)
 
 args = argparser.parse_args()
+
+if __name__ == "__main__":
+    args.checkpoint_dir = "checkpoints/KFT_StructureNet_0.ckpt"
 
 model = Halearner(config)
 
