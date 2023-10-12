@@ -5,6 +5,8 @@ from train import *
 
 import matplotlib.pyplot as plt
 
+from visualize import visualize_pointcloud
+
 weights = {"reconstruction":1.0,"color_reconstruction":1.0,"occ_reconstruction":1.0,"localization":1.0,"chamfer":100.0,"equillibrium_loss":1.0}
 
 argparser = argparse.ArgumentParser()
