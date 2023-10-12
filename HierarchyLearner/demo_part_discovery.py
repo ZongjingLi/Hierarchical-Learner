@@ -48,6 +48,7 @@ args = argparser.parse_args()
 
 if __name__ == "__main__":
     args.checkpoint_dir = "checkpoints/KFT_StructureNet_0.ckpt"
+    args.checkpoint_dir = None
 
 model = Halearner(config)
 
