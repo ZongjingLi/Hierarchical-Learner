@@ -5,7 +5,7 @@ from .programs import *
 from .percept import *
 from .executor import *
 
-from Karanir.dklearn import FCBlock, GraphConvolution
+from karanir.dklearn import FCBlock, GraphConvolution
 
 class Halearner(nn.Module):
     def __init__(self, config):

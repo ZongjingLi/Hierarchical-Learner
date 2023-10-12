@@ -1,3 +1,4 @@
+from karanir import *
 import torch
 from torch import nn
 
@@ -25,7 +26,12 @@ class BoxRegistry(nn.Module):
         self._init_methods[init_method](offset, *config.offset)
         return nn.Embedding(entries, self.dim * 2, _weight=torch.cat([center, offset], dim=1))
     
-    def forward(self, x):return self.boxes(x)
+    def forward(self, x):
+        embs = self.boxes(x)
+        return embs
+        return torch.cat( [torch.tanh(embs[:,:self.dim]) * 0.5,\
+                           torch.sigmoid(embs[:,:self.dim:]) * 0.5 ], dim = -1 )
+
 
     def clamp_dimensions(self):
         with torch.no_grad():
@@ -34,7 +40,7 @@ class BoxRegistry(nn.Module):
 
     def __getitem__(self, key, item): self.boxes.weight[key] = item
 
-    def __getitem__(self, key):return self.boxes.weight[key]
+    def __getitem__(self, key):return torch.tanh(self.boxes.weight[key])*0.25
 
     @property
     def device(self):return self.boxes.weight.device
@@ -58,7 +64,7 @@ class PlaneRegistry(nn.Module):
             self.planes.weight.abs_()
 
     def forward(self, x):
-        return self.planes(x)
+        return torch.tanh(self.planes(x) ) * 0.5
 
     def __setitem__(self, key, item):
         self.planes.weight[key] = item
@@ -95,13 +101,13 @@ class ConeRegistry(nn.Module):
         return nn.Embedding(entries, self.dim, _weight=weight)
 
     def forward(self, x):
-        return self.cones(x)
+        return torch.tanh(self.cones(x)) 
 
     def __setitem__(self, key, item):
         self.cones.weight[key] = item
 
     def __getitem__(self, key):
-        return self.cones.weight[key]
+        return torch.tanh(self.cones.weight[key]) * 0.5
 
     def clamp_dimensions(self):
         with torch.no_grad():

@@ -5,9 +5,9 @@ from torch import nn
 from torch.nn import functional as F
 
 from model.nn import build_entailment, build_box_registry
-from Karanir.utils import freeze
-from Karanir.utils.misc import *
-from Karanir.utils import *
+from karanir.utils import freeze
+from karanir.utils.misc import *
+from karanir.utils import *
 
 class UnknownArgument(Exception):
     def __init__(self):super()
@@ -55,6 +55,19 @@ class SceneProgramExecutor(nn.Module):
         self.hierarchy = 0
 
         self.translator = config.translator
+        
+    def spectrum(self,node_features, concepts = None):
+        masks = []
+        if concepts is None: concepts = self.concept_vocab
+        for concept in concepts: 
+            masks.append(self.concept_registry(\
+                node_features, \
+                self.get_concept_embedding(concept))
+                )
+        return masks
+    
+    def all_embeddings(self):
+        return self.concept_vocab, [self.get_concept_embedding(emb) for emb in self.concept_vocab]
 
     def get_concept_embedding(self,concept):
         try:
