@@ -39,13 +39,13 @@ def load_scene(scene, k):
     return [score[k] for score in scores], [feature[k] for feature in features], \
         [connection[k] for connection in connections[1:]]
 
-def train(train_model, config, args, phase = "1"):
+def train(train_model, config, args, phase = "0", num_sample = None):
     B = int(args.batch_size)
     train_model = train_model.to(config.device)
     train_model.config = config
     train_model.executor.config = config
     assert phase in ["0", "1", "2", "3", "4", "5",0,1,2,3,4,5],print("not a valid phase")
-    query = False if args.phase in ["0",0] else True
+    query = False if phase in ["0",0] else True
     clip_grads = query
     print("start the experiment: {} query:[{}]".format(args.name,query))
     print("experiment config: \nepoch: {} \nbatch: {} samples \nlr: {}\n".format(args.epoch,args.batch_size,args.lr))
@@ -55,13 +55,15 @@ def train(train_model, config, args, phase = "1"):
     if args.dataset == "Objects3d":
         train_dataset= Objects3dDataset(config, sidelength = 128, stage = int(phase))
     if args.dataset == "StructureNet":
-        if args.phase in ["0",]:
+        if phase in ["0",]:
             train_dataset = StructureDataset(config, category = "vase")
-        if args.phase in ["1","2","3","4"]:
+        if phase in ["1","2","3","4"]:
             train_dataset = StructureGroundingDataset(config, category = args.category, split = "train", phase = "1")
     if args.dataset == "Multistruct":
         train_dataset =multistructnet4096("train", "animal", False)
     
+    if num_sample is not None: train_dataset = torch.utils.data.Subset(train_dataset, list(range(num_sample)))
+
     #train_dataset = StructureGroundingDataset(config, category="vase", split = "train")
     dataloader = DataLoader(train_dataset, batch_size = int(args.batch_size), shuffle = args.shuffle)
 
@@ -88,12 +90,13 @@ def train(train_model, config, args, phase = "1"):
     # [start the training process recording]
     itrs = 0
     start = time.time()
-    logging_root = "./tf-logs"
-    ckpt_dir     = os.path.join(logging_root, 'checkpoints')
-    events_dir   = os.path.join(logging_root, 'events')
-    if not os.path.exists(ckpt_dir): os.makedirs(ckpt_dir)
-    if not os.path.exists(events_dir): os.makedirs(events_dir)
-    writer = SummaryWriter(events_dir)
+    if True or num_sample is None:
+        logging_root = "./tf-logs"
+        ckpt_dir     = os.path.join(logging_root, 'checkpoints')
+        events_dir   = os.path.join(logging_root, 'events')
+        if not os.path.exists(ckpt_dir): os.makedirs(ckpt_dir)
+        if not os.path.exists(events_dir): os.makedirs(events_dir)
+        writer = SummaryWriter(events_dir)
     max_gradient = 1000.
     for epoch in range(args.epoch):
         epoch_loss =  0.0
@@ -110,10 +113,55 @@ def train(train_model, config, args, phase = "1"):
 
             # [Query Loss]
             query_loss = 0.0
+            if query:
+                features = percept_outputs["features"]
+
+                #for k in sample:print(k)
+                qa_programs = sample["programs"]
+                answers = sample["answers"]
+
+                features = train_model.feature2concept(features)
+                if config.concept_type == "box" and False:
+
+                    features = torch.cat([
+                        features, 
+                        EPS * torch.ones(B,features.shape[1],config.concept_dim)\
+                        ],dim = -1)
+                #print(features.shape)
+                scene = train_model.build_scene(features)
+
+            
+                for b in range(features.shape[0]):
+                    scores,features,connections = load_scene(scene, b)
+
+                    kwargs = {"features":features,
+                    "end":scores,
+                    "connections":connections}
+
+                    for i,q in enumerate(qa_programs):
+                        answer = answers[i][b]
+
+                        q = train_model.executor.parse(q[0])
+
+                        o = train_model.executor(q, **kwargs)
+                        
+                        if answer in ["True","False"]:answer = {"True":"yes,","False":"no"}[answer]
+                        if answer in ["1","2","3","4","5"]:answer = num2word(int(answer))
+                        
+                        if answer in numbers:
+                            int_num = torch.tensor(numbers.index(answer)).float().to(args.device)
+                            query_loss += F.mse_loss(int_num ,o["end"])
+                            
+                        if answer in yes_or_no:
+                            if answer == "yes":
+                                query_loss -= torch.log(torch.sigmoid(o["end"]))
+                            else:
+                                query_loss -= torch.log(1 - torch.sigmoid(o["end"]))
             
             # [Overall Working Loss]
-            working_loss = percept_loss + query_loss
+            working_loss = percept_loss * alpha + query_loss * beta
             epoch_loss += working_loss.cpu().detach().numpy()
+
             writer.add_scalar("working_loss",working_loss.cpu().detach().numpy(), itrs)
 
             # [Optimization Loss]
@@ -130,7 +178,7 @@ def train(train_model, config, args, phase = "1"):
 
         writer.add_scalar("epoch_loss", epoch_loss, epoch)
     print("\n\nExperiment {} : Training Completed.".format(args.name))
-
+    return train_model
 
 
 

@@ -24,6 +24,7 @@ class Halearner(nn.Module):
         self.effective_level = "all"
         self.box_dim = config.concept_dim
         self.is_box = False
+        self.feature2concept = nn.Linear(131, 100)
         
     
     def forward(self, sample):
