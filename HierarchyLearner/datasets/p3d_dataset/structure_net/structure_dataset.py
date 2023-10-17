@@ -32,13 +32,14 @@ class StructureDataset(Dataset):
         return {"point_cloud":pc_data["parts"][0]}, pc_data["parts"][0]
 
 class StructureGroundingDataset(Dataset):
-    def __init__(self, config,category = "vase" , split = "train", phase = "1"):
+    def __init__(self, config,category = "chair" , split = "train", phase = "1"):
         super().__init__()
         root = config.dataset_root
         self.root = root
         self.split = split
         if isinstance(category, str): cats = [category]
         else: cats = category
+        print("StructureGrouding Net with ",category)
         self.valid_types = ["existence","hierarchy","counting"]
         if phase in [2,"2"]: self.valid_types.append("counting")
         self.data_idx = []

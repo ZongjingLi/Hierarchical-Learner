@@ -13,6 +13,8 @@ import os
 import random
 from tqdm import tqdm
 
+
+
 colors = [
     '#1f77b4',  # muted blue
     '#ff7f0e',  # safety orange
@@ -293,8 +295,8 @@ def generate_structure(cat = "chair", idx = 176, full_grounding = True):
 
     # [Build Question Ansering Pairs] build category labels in the scene
     scene_labels = [];  build_labels(hier_data,scene_labels)
-    all_labels = ["pot","body","container","containing_things","liquid_or_soil",
-                "plant","other","lid","base","foot_base","foot"]
+    #all_labels = ["pot","body","container","containing_things","liquid_or_soil",
+    #            "plant","other","lid","base","foot_base","foot"]
     if not full_grounding:
         qa_pairs = []
         # Existence Questions
@@ -357,8 +359,8 @@ def generate_structure(cat = "chair", idx = 176, full_grounding = True):
         "questions_answers":questions_answers}
 
 def gen_full_grounding(test_tree, mode = "full"):
-    all_labels = ["pot","body","container","containing_things","liquid_or_soil",
-                "plant","other","lid","base","foot_base","foot"]
+    #all_labels = ["pot","body","container","containing_things","liquid_or_soil",
+    #            "plant","other","lid","base","foot_base","foot"]
     test_dataset = {}
     nodes = [];depths = []
     sons = {}
@@ -431,10 +433,16 @@ def tree_contain(p1,p2,tree):pass
 import argparse
 
 genparser = argparse.ArgumentParser()
-genparser.add_argument("--mode",                default = "Nope")
+genparser.add_argument("--mode",                default = "geo")
 genparser.add_argument("--category",            default = "chair")
 genparser.add_argument("--num_points",          default = 1000)
 genargs = genparser.parse_args()
+
+all_labels = []
+with open("HierarchyLearner/knowledge/structure_{}_concept_vocab.txt".format(genargs.category),"r") as file:
+    lines = file.readlines()
+    for line in lines:
+        all_labels.append(line.strip())
 
 #assert genargs.mode in ["geo","full"],print(genargs.mode)
 qadataset_dir = root + "/partnet_{}_qa/{}".format(genargs.mode,genargs.category)

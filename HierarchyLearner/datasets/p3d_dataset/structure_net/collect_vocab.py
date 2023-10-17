@@ -3,9 +3,9 @@ import argparse
 from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--root",               default = "")
+parser.add_argument("--root",               default = "HierarchyLearner")
 parser.add_argument("--mode",               default = "geo")
-parser.add_argument("--category",           default = "vase")
+parser.add_argument("--category",           default = "chair")
 args = parser.parse_args()
 
 def build_labels(h,voc):
@@ -20,7 +20,7 @@ def load_json(path):
         return data
 
 if args.mode == "geo":
-    root = "/Users/melkor/Documents/GitHub/Hierarchical-Learner"
+    root = "/Users/melkor/Documents/GitHub/Hierarchical-Learner/HierarchyLearner"
     data_root = "/Users/melkor/Documents/datasets"
     category = args.category
     train_split_path = data_root + "/partnethiergeo/{}_hier/train.txt".format(args.category)

@@ -56,9 +56,9 @@ def train(train_model, config, args, phase = "0", num_sample = None):
         train_dataset= Objects3dDataset(config, sidelength = 128, stage = int(phase))
     if args.dataset == "StructureNet":
         if phase in ["0",]:
-            train_dataset = StructureDataset(config, category = "vase")
+            train_dataset = StructureDataset(config, category = args.category[0])
         if phase in ["1","2","3","4"]:
-            train_dataset = StructureGroundingDataset(config, category = args.category, split = "train", phase = "1")
+            train_dataset = StructureGroundingDataset(config, category = args.category[0], split = "train", phase = "1")
     if args.dataset == "Multistruct":
         train_dataset =multistructnet4096("train", "animal", False)
     
@@ -66,7 +66,6 @@ def train(train_model, config, args, phase = "0", num_sample = None):
 
     #train_dataset = StructureGroundingDataset(config, category="vase", split = "train")
     dataloader = DataLoader(train_dataset, batch_size = int(args.batch_size), shuffle = args.shuffle)
-
 
     # [joint training of perception and language]
     alpha = args.alpha

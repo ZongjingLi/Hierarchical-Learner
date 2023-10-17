@@ -19,7 +19,7 @@ parser.add_argument("--device",             default = device)
 parser.add_argument("--name",               default = "HierarchyLearner")
 
 parser.add_argument("--domain",             default = "structure")
-parser.add_argument("--category",           default = ["vase"])
+parser.add_argument("--category",           default = ["chair"])
 
 # acne network
 parser.add_argument("--latent_dim",         default = 128)
@@ -48,7 +48,7 @@ parser.add_argument("--concept_projection", default = True)
 parser.add_argument("--concept_type",       default = "cone")
 parser.add_argument("--concept_dim",        default = 100)
 parser.add_argument("--object_dim",         default = 100)
-parser.add_argument("--temperature",        default = 0.1)
+parser.add_argument("--temperature",        default = 0.2)
 
 # box concept methods
 parser.add_argument("--method",             default = "uniform")

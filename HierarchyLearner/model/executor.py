@@ -39,10 +39,12 @@ class SceneProgramExecutor(nn.Module):
         # [Word Vocab]
         concept_vocab = []
         if isinstance(config.category,list):
+            print(config.root + "/knowledge/{}_{}_concept_vocab.txt".format(config.domain,config.category[0]))
             for cat in config.category:
                 with open(config.root + "/knowledge/{}_{}_concept_vocab.txt".format(config.domain,cat)) as vocab:
                     for concept_name in vocab:concept_vocab.append(concept_name.strip())
         else:
+            print(config.root + "/knowledge/{}_concept_vocab.txt".format(config.domain))
             with open(config.root + "/knowledge/{}_concept_vocab.txt".format(config.domain)) as vocab:
                 for concept_name in vocab:concept_vocab.append(concept_name.strip())
 
@@ -55,7 +57,7 @@ class SceneProgramExecutor(nn.Module):
         self.hierarchy = 0
 
         self.translator = config.translator
-        
+
     def spectrum(self,node_features, concepts = None):
         masks = []
         if concepts is None: concepts = self.concept_vocab
