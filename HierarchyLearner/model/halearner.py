@@ -36,12 +36,12 @@ class Halearner(nn.Module):
         scores:   BxNx1 
         """
         B,N,D = input_features.shape
-        scores = []
-        features  = []
+        scores = [ torch.ones(B,N) ]
+        features  = [input_features]
         connections = []
         box_dim = self.box_dim
 
-        input_scores = torch.ones([B,N,1])
+        input_scores = scores[-1].unsqueeze(-1)
         for i,builder in enumerate(self.scene_builder):
             #input_features [B,N,D]
             if self.is_box:
