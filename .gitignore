@@ -404,3 +404,5 @@ FodyWeavers.xsd
 *.pth
 *.npy
 *.0
+*.1
+*.5
