@@ -40,7 +40,7 @@ class StructureGroundingDataset(Dataset):
         if isinstance(category, str): cats = [category]
         else: cats = category
         print("StructureGrouding Net with ",category)
-        self.valid_types = ["existence","hierarchy","counting"]
+        self.valid_types = ["existence","hierarchy"]
         if phase in [2,"2"]: self.valid_types.append("counting")
         self.data_idx = []
         for cat in cats:
