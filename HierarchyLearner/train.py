@@ -82,7 +82,7 @@ def train(train_model, config, args, phase = "0", num_sample = None):
 
     if args.freeze_perception:
          print("freezed the perception module: True")
-         freeze_parameters(train_model.part_perception)
+         freeze_parameters(train_model.perception)
     if phase not in ["0"]:
        freeze_hierarchy(train_model,int(phase))
          
