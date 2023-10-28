@@ -70,6 +70,7 @@ def train(train_model, config, args, phase = "0", num_sample = None):
     # [joint training of perception and language]
     alpha = args.alpha
     beta  = args.beta
+    print("alpha:{} beta:{}".format(alpha, beta))
     if args.training_mode == "query":alpha = 1
     if args.training_mode == "perception":beta = 1
     

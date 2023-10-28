@@ -21,6 +21,9 @@ parser.add_argument("--name",               default = "HierarchyLearner")
 parser.add_argument("--domain",             default = "structure")
 parser.add_argument("--category",           default = ["chair"])
 
+parser.add_argument("--perception",         default = "point_net")
+parser.add_argument("--scaling",            default = 1.0)
+
 # acne network
 parser.add_argument("--latent_dim",         default = 128)
 parser.add_argument("--num_pts",            default = 1024)

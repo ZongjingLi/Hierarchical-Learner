@@ -134,5 +134,5 @@ class CSQNet(nn.Module):
         losses = {"chamfer":chamfer_loss,"localization":loc_loss * 7.0,"equillibrium_loss":equi_loss * 1.1}
         outputs = {"losses":losses,"recon_pc":y,"masks":attention,"abstract_scene":scene_construct,\
             "features":gc.permute(0,2,1,3).squeeze(-1),"positions":pose_locals.permute(0,2,1,3).squeeze(-1),
-            "components":splits}
+            "components":splits,"attention":attention}
         return outputs
