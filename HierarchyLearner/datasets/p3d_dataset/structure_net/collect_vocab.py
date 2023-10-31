@@ -5,7 +5,7 @@ from tqdm import tqdm
 parser = argparse.ArgumentParser()
 parser.add_argument("--root",               default = "HierarchyLearner")
 parser.add_argument("--mode",               default = "geo")
-parser.add_argument("--category",           default = "chair")
+parser.add_argument("--category",           default = "table")
 args = parser.parse_args()
 
 def build_labels(h,voc):

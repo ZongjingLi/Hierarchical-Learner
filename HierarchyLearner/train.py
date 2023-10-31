@@ -109,6 +109,7 @@ def train(train_model, config, args, phase = "0", num_sample = None):
             losses = percept_outputs["losses"]
             for item in losses:
                 percept_loss += losses[item]
+                #print(item)
                 writer.add_scalar(item, losses[item].cpu().detach().numpy(), itrs)
 
             # [Query Loss]
@@ -170,7 +171,7 @@ def train(train_model, config, args, phase = "0", num_sample = None):
             optimizer.step()
 
             if itrs % args.checkpoint_itrs == 0:
-                torch.save(train_model, "checkpoints/{}_{}_{}.ckpt".format(args.name,args.dataset,args.phase))
+                torch.save(train_model.state_dict(), "checkpoints/{}_{}_{}.pth".format(args.name,args.dataset,args.phase))
 
             sys.stdout.write ("\rEpoch: {}, Itrs: {} Loss: {} Percept:{} Language:{}, Time: {}"\
                 .format(epoch + 1, itrs, working_loss,percept_loss,query_loss,datetime.timedelta(seconds=time.time() - start)))

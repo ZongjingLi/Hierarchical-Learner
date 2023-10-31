@@ -7,12 +7,13 @@ from karanir.utils import load_json
 import networkx as nx
 
 class StructureDataset(Dataset):
-    def __init__(self, config, category = "chair", mode = "train"):
+    def __init__(self, config, category = "chair", mode = "train", split = "train"):
         super().__init__()
         root = config.dataset_root
         self.root = root
         self.category = category
         cats = [category]
+        self.split = "train"
 
         #hier_path = root + "/partnethiergeo/{}_hier/{}.json".format(category)
         self.data_idx = []
@@ -29,7 +30,23 @@ class StructureDataset(Dataset):
         root = self.root 
         pc_path = root + "/partnethiergeo/{}_geo/{}.npz".format(category,index)
         pc_data = np.load(pc_path)
-        return {"point_cloud":pc_data["parts"][0]}, pc_data["parts"][0]
+
+        # [Load Coords and Others]
+        pc_path = root + "/partnet_geo_qa/{}/{}/point_cloud/coord_{}.npy".format(category,self.split,index)
+        query_coords = torch.tensor(np.load(pc_path)).float()
+
+        pc_path = root + "/partnet_geo_qa/{}/{}/point_cloud/color_{}.npy".format(category,self.split,index)
+        query_colors = torch.tensor(np.load(pc_path)).float()
+
+        pc_path = root + "/partnet_geo_qa/{}/{}/point_cloud/occ_{}.npy".format(category,self.split,index)
+        query_occ = torch.tensor(np.load(pc_path)).float()
+
+        return {"point_cloud":torch.tensor(pc_data["parts"][0]).float(),
+                "rgb":torch.ones([pc_data["parts"][0].shape[0],1]),\
+                "coords":query_coords,
+                "coord_color":query_colors,
+                "occ":query_occ},\
+                pc_data["parts"][0]
 
 class StructureGroundingDataset(Dataset):
     def __init__(self, config,category = "chair" , split = "train", phase = "1"):
@@ -57,7 +74,19 @@ class StructureGroundingDataset(Dataset):
         category,index = self.data_idx[idx] 
         root = self.root 
         pc_path = root + "/partnet_geo_qa/{}/{}/point_cloud/{}.npy".format(category,self.split,index)
-        point_cloud = np.load(pc_path)
+        point_cloud = torch.tensor(np.load(pc_path)).float()
+        
+        # [Load Coords and Others]
+        pc_path = root + "/partnet_geo_qa/{}/{}/point_cloud/coord_{}.npy".format(category,self.split,index)
+        query_coords = torch.tensor(np.load(pc_path)).float()
+
+        pc_path = root + "/partnet_geo_qa/{}/{}/point_cloud/color_{}.npy".format(category,self.split,index)
+        query_colors = torch.tensor(np.load(pc_path)).float()
+
+        pc_path = root + "/partnet_geo_qa/{}/{}/point_cloud/occ_{}.npy".format(category,self.split,index)
+        query_occ = torch.tensor(np.load(pc_path)).float()
+
+
         phase = self.phase
         qa_file = load_json(root + "/partnet_geo_qa/{}/{}/qa/{}.json".format(category,self.split,index))["all"][phase]
         questions   =  []
@@ -75,6 +104,17 @@ class StructureGroundingDataset(Dataset):
         r_questions = [questions[i] for i in idxs]
         r_answers   = [answers[i] for i in idxs]
         r_programs  = [programs[i] for i in idxs]
+        
+        #{'point_cloud': point_cloud.float(),
+        #        'rgb': rgb_world.float(),
+        #        'coords': coord.float(),
+        #        'intrinsics': intrinsics.float(),
+        #        'cam_poses': np.zeros(1),
+        #        'occ': torch.from_numpy(labels).float(),
+        #        'coord_color': coord_color.float(),
+        #        'id': index
+        #        } 
 
         return {"point_cloud":point_cloud,"questions":r_questions,"answers":r_answers,\
-            "scene_tree":scene_tree,"programs":r_programs,"index":index,"category":category}, 0
+            "scene_tree":scene_tree,"programs":r_programs,"index":index,"category":category\
+            ,"coords":query_coords,"coord_color":query_colors,"occ":query_occ,"rgb":torch.ones([point_cloud.shape[0],1])}, 0

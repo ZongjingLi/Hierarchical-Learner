@@ -189,33 +189,39 @@ class HierarchicalVNN(nn.Module):
                         sigmoid=True, return_features=self.return_features, acts="all" )
 
         self.scaling = config.scaling
+        self.obj_map = nn.Linear(1025,100)
 
     def forward(self, inputs):
         device = self.device
+        B, N, _ = inputs["point_cloud"].shape
         enc_in = inputs['point_cloud'] * self.scaling 
-        query_points = inputs['coords'] * self.scaling 
+        query_points = inputs['coords'] * self.scaling
 
         enc_in = torch.cat([enc_in, inputs['rgb']], 2)
         z = self.encoder(enc_in)
 
         outputs = {}
 
+        # [Get Total Query Points and Reconstruction
+        all_query_points = torch.cat([query_points, inputs['point_cloud']], dim = 1)
         
         if self.return_features:
-            outputs['occ_branch'], outputs['features'], outputs['features2'], outputs['color'], outputs['occ'] = self.decoder(inputs['coords'], inputs['occ'], query_points, z)
+            outputs['occ_branch'], outputs['features'], outputs['features2'], outputs['color'], outputs['occ'] = self.decoder(inputs['coords'], inputs['occ'], all_query_points, z)
         else:
             outputs['occ_branch'], outputs['color'], outputs['occ'] = self.decoder(inputs['coords'], inputs['occ'], query_points, z)
 
-        #print((inputs["occ"]+1)/2)
-        #print(outputs["occ"].unsqueeze(-1))
-        
-        label = inputs['occ'].squeeze()
+        label = inputs['occ'].squeeze(-1)
         label = (label + 1) / 2.
+
+        label = torch.cat([label, torch.ones(B,N)], dim = 1)
         recon_loss_occ= -1 * (label * torch.log(outputs['occ'] + 1e-5) + (1 - label) * torch.log(1 - outputs['occ'] + 1e-5)).mean()
+
         #EPS = 1e-6
-        #recon_loss_occ = torch.nn.functional.binary_cross_entropy(torch.clamp((inputs["occ"].to(device)+1)/2,min=EPS,max=1-EPS).to(device),outputs["occ"].unsqueeze(-1).to(device))
-        recon_loss_color = torch.nn.functional.mse_loss(outputs["color"].to(device),inputs["coord_color"].to(device))
-        outputs["loss"] = {"occ_reconstruction":recon_loss_occ ,"color_reconstruction":recon_loss_color}
+        #recon_loss_occ = torch.nn.functional.binary_cross_entropy(torch.clamp(inputs["occ"].to(device) ,min=EPS,max=1-EPS).to(device),outputs["occ"].unsqueeze(-1).to(device))
+        query_colors = torch.cat([inputs["coord_color"]], dim = 1)
+        recon_loss_color = recon_loss_occ
+        #recon_loss_color += torch.nn.functional.mse_loss(outputs["color"].to(device),query_colors.to(device))
+        outputs["losses"] = {"occ_reconstruction":recon_loss_occ ,"color_reconstruction":recon_loss_color}
         return outputs
 
 class VNNOccNet(nn.Module):

@@ -20,6 +20,7 @@ class Objects3dDataset(Dataset):
         self.test = test
 
         path = root + "/objects3d/shapes"
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
         self.ques_dict = json.load(open(root + "/objects3d/%s_questions.json"%phase))
 
@@ -76,6 +77,7 @@ class Objects3dDataset(Dataset):
         return len(self.files)
 
     def get_item(self, index):
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
         filename = self.filenames[index]
 
         if ((not self.stage in [0,1]) and not self.vis) or self.test:
@@ -263,4 +265,5 @@ class Objects3dDataset(Dataset):
         return res, {'occ': torch.from_numpy(labels).float()}
 
     def __getitem__(self, index):
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
         return self.get_item(index)

@@ -13,7 +13,7 @@ import os
 import random
 from tqdm import tqdm
 
-
+import shapely
 
 colors = [
     '#1f77b4',  # muted blue
@@ -262,6 +262,61 @@ def build_labels(h,voc):
         for child in h["children"]:
             build_labels(child, voc)
 
+def point_inside_box(point, box):
+    vertex, faces = box
+    #print(np.linalg.det(dm))
+    flag = True
+    faces = [
+        [3,2,0,1],
+        [5,4,6,7],
+        [7,6,2,3],
+        [0,2,6,4],
+        [1,0,4,5],
+        [5,7,3,1]
+    ]
+    s = 1.0
+    for face in faces:
+        fv0 = vertex[face[0]] * s
+        fv1 = vertex[face[1]] * s
+        fv2 = vertex[face[3]] * s
+        diff = point - fv0
+        normal = np.cross(fv1-fv0, fv2 - fv0)
+        indic = np.dot(normal, diff)
+        if (indic > 0): flag = False
+        #np.cross()
+    return flag
+
+def inside_test(points , cube3d):
+    """
+    cube3d  =  numpy array of the shape (8,3) with coordinates in the clockwise order. first the bottom plane is considered then the top one.
+    points = array of points with shape (N, 3).
+
+    Returns the indices of the points array which are outside the cube3d
+    """
+    b1,b2,b3,b4,t1,t2,t3,t4 = cube3d
+
+    dir1 = (t1-b1)
+    size1 = np.linalg.norm(dir1)
+    dir1 = dir1 / size1
+
+    dir2 = (b2-b1)
+    size2 = np.linalg.norm(dir2)
+    dir2 = dir2 / size2
+
+    dir3 = (b4-b1)
+    size3 = np.linalg.norm(dir3)
+    dir3 = dir3 / size3
+
+    cube3d_center = (b1 + t3)/2.0
+
+    dir_vec = points - cube3d_center
+
+    res1 = np.where( (np.absolute(np.dot(dir_vec, dir1)) * 2) < size1 )[0]
+    res2 = np.where( (np.absolute(np.dot(dir_vec, dir2)) * 2) < size2 )[0]
+    res3 = np.where( (np.absolute(np.dot(dir_vec, dir3)) * 2) < size3 )[0]
+
+    return list( set().union(res1, res2, res3) )
+
 def generate_structure(cat = "chair", idx = 176, full_grounding = True):
     pc_path = root + "/partnethiergeo/{}_geo/{}.npz".format(cat, idx)
     pc_data = np.load(pc_path)
@@ -272,6 +327,8 @@ def generate_structure(cat = "chair", idx = 176, full_grounding = True):
     # [Build Scene Tree]
     hier_path = root + "/partnethiergeo/{}_hier/{}.json".format(cat, idx)
     hier_data = load_json(hier_path)
+
+    all_boxes = []
 
     scene_tree = nx.DiGraph()
     uniform_tree = nx.DiGraph()
@@ -290,8 +347,50 @@ def generate_structure(cat = "chair", idx = 176, full_grounding = True):
         if "children" in h:
             for child in h["children"]:
                 build_st(child, name)
+        else: all_boxes.append(create_box(h["box"]))
     build(hier_data, "root")
     build_st(hier_data,"root")
+
+    npts = 1000; r = 0.8; npv = 3000
+    query_coords = np.random.uniform(-r,r,[npts,3])
+    query_colors = np.ones([npts,3]) * 0.5
+    query_occ = np.ones([npts,1])
+
+    for i,coord in enumerate(query_coords):
+        flag = False
+        #point = Point(coord[0],coord[1],coord[2])
+        for box in all_boxes:
+            if point_inside_box(coord, box):
+                #print(box_poly.contains(point))
+                flag = True
+        if flag:query_occ[i] = 1.0
+        else:query_occ[i] = 0.0
+
+    #print(query_occ.max(),query_occ.min())
+    query_coords = query_coords[:npv]
+    query_colors = query_colors[:npv]
+    query_occ = query_occ[:npv]
+
+    #print(all_boxes)
+    verbose = False
+    if verbose:
+        fig = plt.figure()
+        ax = Axes3D(fig, auto_add_to_figure=False)
+        fig.add_axes(ax)
+        ax.set_xlim(-1.0,1.0)
+        ax.set_ylim(-1.0,1.0)
+        ax.set_zlim(-1.0,1.0)
+        for box in all_boxes:
+            for face in box[1]:
+                x = box[0][face,0]
+                y = box[0][face,1]
+                z = box[0][face,2]
+                verts = [list(zip(x,y,z))]
+                #ax.add_collection3d(Poly3DCollection(verts))
+        ax.scatter(pc[:,0],pc[:,1],pc[:,2])
+        query_coords = query_coords * query_occ
+        ax.scatter(query_coords[:,0],query_coords[:,1],query_coords[:,2 ])
+        plt.show()
 
     # [Build Question Ansering Pairs] build category labels in the scene
     scene_labels = [];  build_labels(hier_data,scene_labels)
@@ -356,7 +455,10 @@ def generate_structure(cat = "chair", idx = 176, full_grounding = True):
     questions_answers = {"all":qa_pairs,"depth":depth}
 
     return {"point_cloud":pc, "rgbs":None,"scene_tree":scene_tree,\
-        "questions_answers":questions_answers}
+        "questions_answers":questions_answers,
+         "coords":query_coords,
+         "occ":query_occ,
+         "coord_color":query_colors}
 
 def gen_full_grounding(test_tree, mode = "full"):
     #all_labels = ["pot","body","container","containing_things","liquid_or_soil",
@@ -481,6 +583,20 @@ if genargs.mode == "geo":
 
             np.save(root + "/partnet_{}_qa/{}/train/point_cloud/{}.npy".format(genargs.mode,genargs.category,index)\
                 ,np.array(point_cloud))
+
+            #[Save the Query Points and Colors and Occ]
+            query_coords = outputs["coords"]
+            query_colors = outputs["coord_color"]
+            query_occ    = outputs["occ"]
+
+            np.save(root + "/partnet_{}_qa/{}/train/point_cloud/coord_{}.npy".format(genargs.mode,genargs.category,index)\
+                ,np.array(query_coords))
+            np.save(root + "/partnet_{}_qa/{}/train/point_cloud/color_{}.npy".format(genargs.mode,genargs.category,index)\
+                ,np.array(query_colors))
+            np.save(root + "/partnet_{}_qa/{}/train/point_cloud/occ_{}.npy".format(genargs.mode,genargs.category,index)\
+                ,np.array(query_occ))
+
+
             nx.write_gpickle(scene_tree,
             root + "/partnet_{}_qa/{}/train/annotations/{}.pickle".format(genargs.mode,genargs.category,index))
     
@@ -509,7 +625,7 @@ print("Generation Completed: Category:{} Mode: {}".format(genargs.category, gena
 """
 
 #outputs = generate_structure(cat = "vase", idx = 4167)
-#outputs = generate_structure(cat = "table", idx = 18142)
+outputs = generate_structure(cat = "table", idx = 18142)
 #st = outputs["scene_tree"]
 #nx.draw_networkx(st)
 #plt.show()
@@ -517,6 +633,6 @@ print("Generation Completed: Category:{} Mode: {}".format(genargs.category, gena
 #if outputs["rgbs"] is None: outputs["rgbs"] = .5 * torch.ones([outputs["point_cloud"].shape[0],3] )
 
 #visualize_pointcloud([
-#    (outputs["point_cloud"], outputs["rgbs"])
+ #   (outputs["point_cloud"], outputs["rgbs"])
 #])
 #plt.show()
